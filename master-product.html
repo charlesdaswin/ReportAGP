@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="js/api-base.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Product - Anugerah Graha Plasindo</title>
+  <link rel="icon" type="image/png" href="LOGO-AGP-big.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/xlsx.full.min.js"></script>
+
+  <style>
+    .toolbar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+    .tool-item { display: flex; flex-direction: column; gap: 4px; }
+    .tool-item label { font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: .3px; }
+    .tool-item select, .tool-item input {
+      padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; background: #fff;
+    }
+    .btn-tp { border: none; color: #fff; padding: 8px 15px; border-radius: 5px; font-weight: bold;
+              font-size: 13px; cursor: pointer; transition: .15s; white-space: nowrap; }
+    .btn-tp:disabled { background: #94a3b8 !important; cursor: not-allowed; }
+    .btn-import { background: #0284c7; }  .btn-import:hover { background: #0369a1; }
+    .btn-muat   { background: #7c3aed; }  .btn-muat:hover   { background: #6d28d9; }
+    .btn-excel  { background: #15803d; }  .btn-excel:hover  { background: #166534; }
+    .btn-reset  { background: #64748b; }
+
+    .info-strip { background: #eff6ff; border-left: 4px solid #0284c7; padding: 9px 13px; font-size: 12.5px;
+                  color: #1e3a5f; border-radius: 4px; line-height: 1.6; margin-bottom: 12px; }
+    .table-wrap { overflow: auto; max-height: 72vh; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 12px; background: #fff; }
+    table.mp { border-collapse: separate; border-spacing: 0; font-size: 12px; width: max-content; min-width: 100%; }
+    table.mp th, table.mp td { border-right: 1px solid #d7dee8; border-bottom: 1px solid #d7dee8; padding: 5px 8px; white-space: nowrap; }
+    table.mp thead th { position: sticky; top: 0; background: #800000; color: #fff; text-align: center; z-index: 3; cursor: pointer; user-select: none; }
+    table.mp thead th:hover { background: #990000; }
+    table.mp td.kode { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; color: #334155; }
+    table.mp td.no { text-align: right; color: #64748b; }
+    table.mp td.c { text-align: center; }
+    tbody tr:nth-child(even) td { background: #fafbfc; }
+    tbody tr:hover td { background: #fff7ed; }
+    .st { padding: 1px 8px; border-radius: 10px; font-size: 10.5px; font-weight: bold; }
+    .st-on { background: #dcfce7; color: #166534; }
+    .st-off { background: #fee2e2; color: #991b1b; }
+
+    .status-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+                  gap: 10px; font-size: 12px; color: #475569; margin-top: 10px; }
+    .pager { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
+    .pager button { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px;
+                    border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .pager button:disabled { opacity: .45; cursor: not-allowed; }
+    .chip { background: #e0f2fe; color: #0369a1; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+    .msg { margin-top: 10px; font-size: 12.5px; padding: 8px 12px; border-radius: 4px; display: none; }
+    .msg.ok { display: block; background: #f0fdf4; border-left: 4px solid #16a34a; color: #14532d; }
+    .msg.err { display: block; background: #fef2f2; border-left: 4px solid #dc2626; color: #7f1d1d; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <button class="floating-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+    <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='AGP';">
+  </button>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display='none';">
+      <h2>REPORT SYSTEM</h2>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+          <span>Target Divisi Tahunan</span><span class="arrow-icon" id="arrow-target">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-target">
+          <li><a href="target-agpc.html">AGPC</a></li>
+          <li><a href="target-agps.html">AGPS</a></li>
+          <li><a href="target-agpn.html">AGP N</a></li>
+        </ul>
+      </li>
+      <li><a href="history-transaksi.html">History Transaksi</a></li>
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+          <span>Laporan Harian Sales</span><span class="arrow-icon" id="arrow-sales">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-sales">
+          <li><a href="list-sales-route.html">List Sales Route</a></li>
+          <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+          <li><a href="faktur-batal.html">Faktur Batal</a></li>
+          <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-product', this)">
+          <span>Target Product AGPC & AGPS</span><span class="arrow-icon rotate" id="arrow-product">▶</span>
+        </a>
+        <ul class="submenu open" id="submenu-product">
+          <li><a href="master-product.html" class="active">Master Product</a></li>
+          <li><a href="target-product.html">Target Product AGPC & AGPS</a></li>
+        </ul>
+      </li>
+      <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+      <li><a href="history-customer.html">History Customer</a></li>
+      <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+      <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+      <li><a href="#" onclick="handleLogout()" style="color:#ff9999; margin-top:20px; border-top:1px solid #990000;">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div class="page-title">MASTER PRODUCT</div>
+    </div>
+
+    <div class="card">
+      <div class="info-strip">
+        Daftar master produk AGP (sumber: <b>master_product_AGP.xlsx</b>), disimpan di tabel <b>master_product</b>.
+        <br>Gunakan <b>Import Excel</b> untuk memperbarui data — format kolom harus sama:
+        <b>Divisi, Kode Barang, Kode 1, Kode 2, Nama AGP, Nama Master, Kode, Group, Jenis Barang, Merk, Kelompok, STATUS</b>.
+        Klik judul kolom untuk mengurutkan.
+      </div>
+
+      <div class="toolbar">
+        <div class="tool-item">
+          <label>Cari</label>
+          <input type="text" id="f-cari" placeholder="Kode / nama produk..." style="width:220px" oninput="terapkanFilter()">
+        </div>
+        <div class="tool-item">
+          <label>Divisi</label>
+          <select id="f-divisi" onchange="terapkanFilter()"><option value="">Semua</option></select>
+        </div>
+        <div class="tool-item">
+          <label>Jenis Barang</label>
+          <select id="f-jenis" onchange="terapkanFilter()"><option value="">Semua</option></select>
+        </div>
+        <div class="tool-item">
+          <label>Merk</label>
+          <select id="f-merk" onchange="terapkanFilter()"><option value="">Semua</option></select>
+        </div>
+        <div class="tool-item">
+          <label>Kelompok</label>
+          <select id="f-kelompok" onchange="terapkanFilter()"><option value="">Semua</option></select>
+        </div>
+        <div class="tool-item">
+          <label>Status</label>
+          <select id="f-status" onchange="terapkanFilter()"><option value="">Semua</option></select>
+        </div>
+
+        <input type="file" id="f-excel" accept=".xlsx,.xls" class="hidden" onchange="importExcel(this)">
+        <button class="btn-tp btn-muat" onclick="muatData()">🔄 Muat Ulang</button>
+        <button class="btn-tp btn-excel" onclick="exportExcel()">📊 Export Excel</button>
+        <button class="btn-tp btn-import" id="btn-import" onclick="document.getElementById('f-excel').click()">📥 Import Excel</button>
+        <button class="btn-tp btn-reset" onclick="resetFilter()">↺ Reset Filter</button>
+      </div>
+
+      <div class="msg" id="msg"></div>
+
+      <div class="table-wrap">
+        <table class="mp">
+          <thead><tr id="thead-row"></tr></thead>
+          <tbody id="tbody"><tr><td colspan="13" class="c">Memuat data...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="status-bar">
+        <div><span class="chip" id="info-jumlah">0 produk</span></div>
+        <div class="pager">
+          <label>Per halaman</label>
+          <select id="f-perhal" onchange="halaman = 1; render()">
+            <option value="50">50</option><option value="100" selected>100</option>
+            <option value="250">250</option><option value="100000">Semua</option>
+          </select>
+          <button id="btn-prev" onclick="halaman--; render()">‹ Sebelumnya</button>
+          <span id="info-hal">1 / 1</span>
+          <button id="btn-next" onclick="halaman++; render()">Berikutnya ›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/sidebar.js"></script>
+  <script>
+    if (!localStorage.getItem('agp_user_logged')) window.location.href = 'index.html';
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('agp_user_logged');
+        window.location.href = 'index.html';
+      }
+    }
+
+    const API = 'http://localhost:3000';
+
+    // [kunci data, judul kolom Excel / tabel]
+    const KOLOM = [
+      ['divisi', 'Divisi'], ['kode_barang', 'Kode Barang'], ['kode_1', 'Kode 1'], ['kode_2', 'Kode 2'],
+      ['nama_agp', 'Nama AGP'], ['nama_master', 'Nama Master'], ['kode', 'Kode'], ['grup', 'Group'],
+      ['jenis_barang', 'Jenis Barang'], ['merk', 'Merk'], ['kelompok', 'Kelompok'], ['status', 'STATUS']
+    ];
+    const FILTER = [['f-divisi', 'divisi'], ['f-jenis', 'jenis_barang'], ['f-merk', 'merk'],
+                    ['f-kelompok', 'kelompok'], ['f-status', 'status']];
+
+    let semua = [];
+    let tampil = [];
+    let halaman = 1;
+    let urut = { kunci: null, naik: true };
+
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function pesan(teks, ok) {
+      const el = document.getElementById('msg');
+      el.className = 'msg ' + (ok ? 'ok' : 'err');
+      el.textContent = teks;
+    }
+
+    function buatHeader() {
+      document.getElementById('thead-row').innerHTML = '<th>No</th>' + KOLOM.map(([k, j]) => {
+        const panah = urut.kunci === k ? (urut.naik ? ' ▲' : ' ▼') : '';
+        return `<th onclick="urutkan('${k}')">${esc(j)}${panah}</th>`;
+      }).join('');
+    }
+
+    function isiPilihan() {
+      FILTER.forEach(([id, k]) => {
+        const sel = document.getElementById(id);
+        const lama = sel.value;
+        const nilai = [...new Set(semua.map(x => x[k]).filter(Boolean))].sort();
+        sel.innerHTML = '<option value="">Semua</option>' +
+          nilai.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+        if (nilai.includes(lama)) sel.value = lama;
+      });
+    }
+
+    async function muatData() {
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="c">Memuat data...</td></tr>';
+      try {
+        const r = await fetch(`${API}/api/master-product`);
+        const j = await r.json();
+        if (!j.success) throw new Error(j.message);
+        semua = j.items;
+        document.getElementById('msg').className = 'msg';
+      } catch (e) {
+        semua = [];
+        pesan('Gagal memuat master product dari server: ' + e.message + '. Pastikan server.js sudah berjalan.', false);
+      }
+      isiPilihan();
+      terapkanFilter();
+    }
+
+    function terapkanFilter() {
+      const cari = document.getElementById('f-cari').value.trim().toLowerCase();
+      const aktif = FILTER.map(([id, k]) => [k, document.getElementById(id).value]).filter(([, v]) => v);
+      tampil = semua.filter(x => {
+        if (aktif.some(([k, v]) => x[k] !== v)) return false;
+        if (!cari) return true;
+        return [x.kode_barang, x.kode_2, x.nama_agp, x.nama_master, x.grup]
+          .some(v => String(v || '').toLowerCase().includes(cari));
+      });
+      if (urut.kunci) {
+        const k = urut.kunci;
+        tampil.sort((a, b) => String(a[k] || '').localeCompare(String(b[k] || ''), 'id', { numeric: true }) * (urut.naik ? 1 : -1));
+      }
+      halaman = 1;
+      render();
+    }
+
+    function urutkan(k) {
+      urut = { kunci: k, naik: urut.kunci === k ? !urut.naik : true };
+      terapkanFilter();
+    }
+
+    function render() {
+      buatHeader();
+      const per = parseInt(document.getElementById('f-perhal').value);
+      const totalHal = Math.max(1, Math.ceil(tampil.length / per));
+      halaman = Math.min(Math.max(1, halaman), totalHal);
+      const awal = (halaman - 1) * per;
+      const baris = tampil.slice(awal, awal + per);
+
+      document.getElementById('tbody').innerHTML = baris.length === 0
+        ? '<tr><td colspan="13" class="c">Tidak ada data.</td></tr>'
+        : baris.map((x, i) => '<tr>' +
+            `<td class="no">${awal + i + 1}</td>` +
+            KOLOM.map(([k]) => {
+              if (k === 'status') {
+                return `<td class="c"><span class="st ${x.status === 'ACTIVE' ? 'st-on' : 'st-off'}">${esc(x.status)}</span></td>`;
+              }
+              const cls = ['kode_barang', 'kode_2'].includes(k) ? 'kode' : (['divisi', 'kode_1', 'kode'].includes(k) ? 'c' : '');
+              return `<td class="${cls}">${esc(x[k])}</td>`;
+            }).join('') + '</tr>').join('');
+
+      document.getElementById('info-jumlah').textContent =
+        `${tampil.length.toLocaleString('id-ID')} dari ${semua.length.toLocaleString('id-ID')} produk`;
+      document.getElementById('info-hal').textContent = `${halaman} / ${totalHal}`;
+      document.getElementById('btn-prev').disabled = halaman <= 1;
+      document.getElementById('btn-next').disabled = halaman >= totalHal;
+    }
+
+    function resetFilter() {
+      document.getElementById('f-cari').value = '';
+      FILTER.forEach(([id]) => document.getElementById(id).value = '');
+      urut = { kunci: null, naik: true };
+      terapkanFilter();
+    }
+
+    function exportExcel() {
+      if (tampil.length === 0) return alert('Tidak ada data untuk diexport.');
+      const data = [KOLOM.map(([, j]) => j), ...tampil.map(x => KOLOM.map(([k]) => x[k] || ''))];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = KOLOM.map(([k]) => ({ wch: ['nama_agp', 'nama_master', 'grup'].includes(k) ? 38 : 14 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+      XLSX.writeFile(wb, 'master_product_AGP.xlsx');
+    }
+
+    // Header Excel dicocokkan tanpa memperhatikan huruf besar/kecil dan spasi
+    const normal = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    function importExcel(input) {
+      const file = input.files[0];
+      input.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: false });
+          if (rows.length < 2) throw new Error('File kosong.');
+
+          const header = rows[0].map(normal);
+          const posisi = KOLOM.map(([, j]) => header.indexOf(normal(j)));
+          const hilang = KOLOM.filter((_, i) => posisi[i] < 0).map(([, j]) => j);
+          if (hilang.length) throw new Error('Kolom tidak ditemukan: ' + hilang.join(', '));
+
+          const items = rows.slice(1)
+            .map(r => Object.fromEntries(KOLOM.map(([k], i) => [k, String(r[posisi[i]] || '').trim()])))
+            .filter(x => x.kode_barang);
+          if (items.length === 0) throw new Error('Tidak ada baris dengan Kode Barang.');
+
+          const ganti = confirm(`${items.length} produk terbaca dari "${file.name}".\n\n` +
+            `OK = GANTI SEMUA data master product dengan file ini.\n` +
+            `Batal = hanya TAMBAH / PERBARUI produk yang ada di file.`);
+
+          const btn = document.getElementById('btn-import');
+          btn.disabled = true;
+          try {
+            const r = await fetch(`${API}/api/master-product/import`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ mode: ganti ? 'replace' : 'upsert', items })
+            });
+            const j = await r.json();
+            if (!j.success) throw new Error(j.message);
+            await muatData();
+            pesan(j.message, true);
+          } finally {
+            btn.disabled = false;
+          }
+        } catch (e) {
+          pesan('Import gagal: ' + e.message, false);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    muatData();
+  </script>
+</body>
+</html>
