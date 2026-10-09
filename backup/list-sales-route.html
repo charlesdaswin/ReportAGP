@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="../js/api-base.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List Sales Route - Anugerah Graha Plasindo</title>
+  <link rel="icon" type="image/png" href="LOGO-AGP-big.png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; }
+    .table-route { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
+    .table-route th, .table-route td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+    .table-route th { background: #800000; color: #fff; text-align: center; font-weight: bold; }
+    .table-route tr:nth-child(even) { background: #f8fafc; }
+    .btn-edit-icon {
+      background: #f59e0b; color: white; border: none; padding: 6px 10px;
+      border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.2s;
+    }
+    .btn-edit-icon:hover { background: #d97706; }
+    
+    /* MODAL POPUP EDIT */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+      z-index: 10000; visibility: hidden; opacity: 0; transition: all 0.3s ease;
+    }
+    .modal-overlay.active { visibility: visible; opacity: 1; }
+    .modal-card {
+      background: white; padding: 25px; border-radius: 8px; width: 500px;
+      max-width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid #f59e0b;
+    }
+    .modal-card h3 { color: #800000; margin-bottom: 15px; font-size: 16px; border: none; }
+    .modal-card .form-group { margin-bottom: 12px; }
+    .modal-card label { display: block; font-size: 12px; color: #475569; margin-bottom: 4px; font-weight: bold; }
+    .modal-card input, .modal-card select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+    .btn-cancel { background: #64748b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+    .btn-simpan { background: #16a34a; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <button class="floating-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+    <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='AGP';">
+  </button>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display='none';">
+      <h2>REPORT SYSTEM</h2>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+          <span>Target Divisi Tahunan</span>
+          <span class="arrow-icon" id="arrow-target">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-target">
+          <li><a href="target-agpc.html">AGPC</a></li>
+          <li><a href="target-agps.html">AGPS</a></li>
+          <li><a href="target-agpn.html">AGP N</a></li>
+        </ul>
+      </li>
+      <li><a href="history-transaksi.html">History Transaksi</a></li>
+<li>
+    <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+      <span>Laporan Harian Sales</span>
+      <span class="arrow-icon" id="arrow-sales">▶</span>
+    </a>
+    <ul class="submenu" id="submenu-sales">
+      <li><a href="list-sales-route.html">List Sales Route</a></li>
+      <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+      <li><a href="faktur-batal.html">Faktur Batal</a></li>
+      <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+    </ul>
+  </li>
+      <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+      <li><a href="history-customer.html">History Customer</a></li>
+      <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+      <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+      <li><a href="#" onclick="handleLogout()" style="color: #ff9999; margin-top: 20px; border-top: 1px solid #990000;">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div class="page-title">LIST SALES ROUTE</div>
+    </div>
+
+    <div class="card">
+      <h3>📍 Daftar Rute Salesman</h3>
+      <div class="table-responsive">
+        <table class="table-route">
+          <thead>
+            <tr>
+              <th style="width: 40px;">No</th>
+              <th style="width: 90px; text-align: center;">Divisi</th>
+              <th>Nama Team</th>
+              <th style="width: 120px; text-align: center;">Kode Area</th>
+              <th>Nama Area</th>
+              <th style="width: 120px;">Kode Salesman</th>
+              <th>Nama Salesman</th>
+              <th style="width: 60px; text-align: center;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-route">
+            <tr>
+              <td colspan="8" style="text-align: center; color: #64748b;">Memuat data rute...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL POPUP FORM EDIT DATA RUTE -->
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal-card">
+      <h3>✏️ Edit Data Rute Sales</h3>
+      <form id="form-edit-route" onsubmit="submitEditRoute(event)">
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label>Nama Divisi</label>
+          <input type="text" id="edit-nama-divisi" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Team</label>
+          <input type="text" id="edit-nama-team" required>
+        </div>
+        <div class="form-group">
+          <label>Kode Area</label>
+          <input type="text" id="edit-kode-area" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Area</label>
+          <input type="text" id="edit-nama-area" required>
+        </div>
+        <div class="form-group">
+          <label>Kode Salesman</label>
+          <input type="text" id="edit-kode-salesman" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Salesman</label>
+          <input type="text" id="edit-nama-salesman" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeEditModal()">Batal</button>
+          <button type="submit" class="btn-simpan">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/sidebar.js"></script>
+  <script>
+    if (!localStorage.getItem('agp_user_logged')) window.location.href = 'index.html';
+
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('agp_user_logged');
+        window.location.href = 'index.html';
+      }
+    }
+
+    let routeData = [];
+
+    // Fetch Data Rute dari Backend
+    async function loadSalesRoute() {
+      const tbody = document.getElementById('tbody-route');
+      try {
+        const response = await fetch('http://localhost:3000/api/sales-routes');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP Error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.data.length > 0) {
+          routeData = result.data;
+          tbody.innerHTML = routeData.map((item, index) => `
+            <tr>
+              <td style="text-align: center;">${index + 1}</td>
+              <td style="text-align: center;"><b>${item.nama_divisi || '-'}</b></td>
+              <td>${item.nama_team || '-'}</td>
+              <td style="text-align: center;"><span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px; font-weight:bold;">${item.kode_area || '-'}</span></td>
+              <td>${item.nama_area || '-'}</td>
+              <td>${item.kode_salesman || '-'}</td>
+              <td><b>${item.nama_salesman || '-'}</b></td>
+              <td style="text-align: center;">
+                <button class="btn-edit-icon" onclick="openEditModal(${item.id})" title="Edit Rute">✏️</button>
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8;">Belum ada data rute salesman.</td></tr>`;
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #ef4444;">Gagal memuat data dari server backend (${err.message}). Pastikan server Node.js berjalan!</td></tr>`;
+      }
+    }
+
+    function openEditModal(id) {
+      const item = routeData.find(r => r.id === id);
+      if (!item) return;
+
+      document.getElementById('edit-id').value = item.id;
+      document.getElementById('edit-nama-divisi').value = item.nama_divisi || '';
+      document.getElementById('edit-nama-team').value = item.nama_team || '';
+      document.getElementById('edit-kode-area').value = item.kode_area || '';
+      document.getElementById('edit-nama-area').value = item.nama_area || '';
+      document.getElementById('edit-kode-salesman').value = item.kode_salesman || '';
+      document.getElementById('edit-nama-salesman').value = item.nama_salesman || '';
+
+      document.getElementById('modal-edit').classList.add('active');
+    }
+
+    function closeEditModal() {
+      document.getElementById('modal-edit').classList.remove('active');
+    }
+
+    async function submitEditRoute(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      
+      const payload = {
+        nama_divisi: document.getElementById('edit-nama-divisi').value,
+        nama_team: document.getElementById('edit-nama-team').value,
+        kode_area: document.getElementById('edit-kode-area').value,
+        nama_area: document.getElementById('edit-nama-area').value,
+        kode_salesman: document.getElementById('edit-kode-salesman').value,
+        nama_salesman: document.getElementById('edit-nama-salesman').value,
+      };
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/sales-routes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert('Data rute berhasil diperbarui!');
+          closeEditModal();
+          loadSalesRoute();
+        } else {
+          alert('Gagal update: ' + result.message);
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan saat mengupdate data!');
+      }
+    }
+
+    window.onload = loadSalesRoute;
+  </script>
+</body>
+</html>

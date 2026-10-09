@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Target Divisi AGP N - Anugerah Graha Plasindo</title>
+  
+  <link rel="icon" type="image/png" href="LOGO-AGP-big.png">
+  <!-- CSS GLOBAL -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- LIBRARY EXPORT -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="js/html2pdf.bundle.min.js"></script>
+  <!-- SCRIPT LOCAL ZIP & FILESAVER (OFFLINE) -->
+  <script src="js/jszip.min.js"></script>
+  <script src="js/FileSaver.min.js"></script>
+
+  <style>
+    .card-section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 10px; }
+    .form-group label { display: block; font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; }
+    .form-group input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
+    .input-editable-title { border: none; border-bottom: 2px solid #800000; font-weight: bold; font-size: 15px; color: #800000; outline: none; background: transparent; margin-bottom: 6px; }
+    
+    /* FORM INPUT PROVINSI / WILAYAH */
+    .province-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-top: 15px; }
+    .province-item { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; position: relative; }
+    .btn-remove { position: absolute; top: 8px; right: 8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 11px; font-weight: bold; }
+    
+    .quick-actions { display: flex; gap: 6px; margin: 8px 0; }
+    .btn-quick { background: #0284c7; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .btn-toggle-month { background: #64748b; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; }
+
+    .monthly-inputs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; }
+    .monthly-item label { display: block; font-size: 10px; font-weight: bold; color: #64748b; }
+    .monthly-item input { width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; }
+
+    .btn-add-prov { background: #0284c7; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; margin-top: 12px; }
+    
+    /* TOMBOL AKSI UTAMA */
+    .action-buttons-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .btn-action-agp { padding: 10px 18px; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; color: white; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-kalkulasi { background: #d00000; }
+    .btn-simpan-db { background: #16a34a; }
+    .btn-history { background: #0284c7; }
+    .btn-log { background: #9333ea; }
+
+    .export-buttons-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+    .btn-export-excel { background: #15803d; color: white; }
+    .btn-export-pdf { background: #dc2626; color: white; }
+    .btn-export-img { background: #d97706; color: white; }
+
+    /* STYLING TABEL EXPORT KERTAS */
+    .table-agpn { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; background: #fff; }
+    .table-agpn th, .table-agpn td { border: 1px solid #000; padding: 5px 6px; text-align: right; }
+    .table-agpn th { background-color: #f1f5f9; text-align: center; font-weight: bold; }
+    .bg-head-agpn { background-color: #ffe6e6 !important; color: #800000; font-weight: bold; text-align: center; }
+
+    /* MODAL POPUP STYLING */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+      z-index: 10000; visibility: hidden; opacity: 0; transition: all 0.3s ease;
+    }
+    .modal-overlay.active { visibility: visible; opacity: 1; }
+    .modal-card {
+      background: white; padding: 25px; border-radius: 8px; width: 600px;
+      max-width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid #800000;
+    }
+    .modal-card h3 { color: #800000; margin-bottom: 15px; font-size: 16px; border: none; }
+    .modal-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+    .modal-table th, .modal-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+    .modal-table th { background: #800000; color: #fff; text-align: center; }
+    .btn-close-modal { background: #64748b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; float: right; margin-top: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- FLOATING BUTTON SIDEBAR -->
+  <button class="floating-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+    <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='AGP';">
+  </button>
+
+  <!-- SIDEBAR MENU NAVIGATION -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display='none';">
+      <h2>REPORT SYSTEM</h2>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+          <span>Target Divisi Tahunan</span>
+          <span class="arrow-icon rotate" id="arrow-target">▶</span>
+        </a>
+        <ul class="submenu open" id="submenu-target">
+          <li><a href="target-agpc.html">AGPC</a></li>
+          <li><a href="target-agps.html">AGPS</a></li>
+          <li><a href="target-agpn.html" class="active">AGP N</a></li>
+        </ul>
+      </li>
+      <li><a href="history-transaksi.html">History Transaksi</a></li>
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+          <span>Laporan Harian Sales</span>
+          <span class="arrow-icon" id="arrow-sales">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-sales">
+          <li><a href="list-sales-route.html">List Sales Route</a></li>
+          <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+          <li><a href="faktur-batal.html">Faktur Batal</a></li>
+          <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+        </ul>
+      </li>
+      <li><a href="target-product.html">Target Product AGPS & AGPC</a></li>
+      <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+      <li><a href="history-customer.html">History Customer</a></li>
+      <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+      <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+      <li><a href="#" onclick="handleLogout()" style="color: #ff9999; margin-top: 20px; border-top: 1px solid #990000;">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div class="main-content">
+    <div class="top-bar">
+      <div class="page-title">TARGET DIVISI AGP N</div>
+    </div>
+
+    <!-- FORM HEADER TARGET AGP N -->
+    <div class="card-section">
+      <h3>🎯 Form Target Divisi AGP N <span id="label-year">2026</span></h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tahun Target:</label>
+          <input type="number" id="input-year" value="2026" onchange="onYearChange()">
+        </div>
+        <div class="form-group">
+          <label>Grup 1 (Bisa Diedit):</label>
+          <input type="text" id="group-1-name" value="LUAR PULAU" class="input-editable-title" oninput="renderGrids()">
+          <input type="number" id="group-1-target" placeholder="Target Nominal Luar Pulau (Opsional)">
+        </div>
+        <div class="form-group">
+          <label>Grup 2 (Bisa Diedit):</label>
+          <input type="text" id="group-2-name" value="BANDUNG - GARUT" class="input-editable-title" oninput="renderGrids()">
+          <input type="number" id="group-2-target" placeholder="Target Nominal Bandung Garut (Opsional)">
+        </div>
+      </div>
+    </div>
+
+    <!-- PENGISIAN PROVINSI GRUP 1 -->
+    <div class="card-section">
+      <h4 style="color:#800000;" id="title-grup-1">1. LUAR PULAU</h4>
+      <div class="province-grid" id="grid-group-1"></div>
+      <button class="btn-add-prov" onclick="addProvince(1)">➕ Tambah Wilayah / Provinsi</button>
+    </div>
+
+    <!-- PENGISIAN PROVINSI GRUP 2 -->
+    <div class="card-section">
+      <h4 style="color:#800000;" id="title-grup-2">2. BANDUNG - GARUT</h4>
+      <div class="province-grid" id="grid-group-2"></div>
+      <button class="btn-add-prov" onclick="addProvince(2)">➕ Tambah Wilayah / Provinsi</button>
+    </div>
+
+    <!-- TOMBOL AKSI UTAMA -->
+    <div class="action-buttons-group">
+      <button class="btn-action-agp btn-kalkulasi" onclick="renderCalculation()">Proses Kalkulasi</button>
+      <button class="btn-action-agp btn-simpan-db" onclick="saveToDatabase()">Simpan ke Database</button>
+      <button class="btn-action-agp btn-history" onclick="openHistoryModal()">📋 History Report</button>
+      <button class="btn-action-agp btn-log" onclick="openLogModal()">📑 Log Update</button>
+    </div>
+
+    <!-- TOMBOL EXPORT -->
+    <div class="export-buttons-group" id="export-buttons-group" style="display: none;">
+      <button class="btn-action-agp btn-export-excel" onclick="exportToExcel()">📊 Export ke Excel</button>
+      <button class="btn-action-agp btn-export-pdf" onclick="exportToPDF()">📄 Export ke PDF</button>
+      <button class="btn-action-agp btn-export-img" onclick="exportToGambar()">🖼️ Export ke Gambar (ZIP)</button>
+    </div>
+
+    <!-- AREA HASIL KALKULASI -->
+    <div id="output-agpn-container"></div>
+  </div>
+
+  <!-- MODAL HISTORY REPORT -->
+  <div class="modal-overlay" id="modal-history">
+    <div class="modal-card" style="width: 480px;">
+      <h3 style="color: #800000; display: flex; align-items: center; gap: 8px;">
+        📜 History Report Target Divisi
+      </h3>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">
+        Pilih tahun report yang pernah disimpan sebelumnya:
+      </p>
+
+      <div class="form-group">
+        <label style="font-size: 13px; font-weight: bold; color: #334155;">Pilih Tahun Target:</label>
+        <select id="select-history-year" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; margin-top: 5px;">
+          <option value="">-- Pilih Tahun --</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button class="btn-close-modal" onclick="closeHistoryModal()" style="background: #64748b; color: white; border: none; padding: 9px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Tutup</button>
+        <button onclick="loadSelectedHistoryYear()" style="background: #0284c7; color: white; border: none; padding: 9px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Tampilkan Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LOG UPDATE -->
+  <div class="modal-overlay" id="modal-log">
+    <div class="modal-card">
+      <h3>📑 Log Update Perubahan Wilayah AGP N</h3>
+      <table class="modal-table">
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Tahun</th>
+            <th>Kode</th>
+            <th>Nama Lama</th>
+            <th>Nama Baru</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-log">
+          <tr><td colspan="5" style="text-align:center;">Memuat log perubahan...</td></tr>
+        </tbody>
+      </table>
+      <button class="btn-close-modal" onclick="closeLogModal()">Tutup</button>
+    </div>
+  </div>
+
+  <script src="js/sidebar.js"></script>
+  <script>
+    if (!localStorage.getItem('agp_user_logged')) window.location.href = 'index.html';
+
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('agp_user_logged');
+        window.location.href = 'index.html';
+      }
+    }
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+
+    function createEmptyMonthly() {
+      return Array(12).fill(0);
+    }
+
+    function createCleanDefaultG1() {
+      return [
+        { name: "LAMPUNG", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "PALEMBANG", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "BENGKULU", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "BANGKA BELITUNG", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "JAMBI", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "PADANG", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "RIAU", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "KALIMANTAN BARAT", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "SULAWESI SELATAN", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "CIKAMPEK", monthlyValues: createEmptyMonthly(), showMonthly: false }
+      ];
+    }
+
+    function createCleanDefaultG2() {
+      return [
+        { name: "BANDUNG", monthlyValues: createEmptyMonthly(), showMonthly: false },
+        { name: "GARUT", monthlyValues: createEmptyMonthly(), showMonthly: false }
+      ];
+    }
+
+    let group1Provinces = createCleanDefaultG1();
+    let group2Provinces = createCleanDefaultG2();
+
+    function renderGrids() {
+      document.getElementById('title-grup-1').innerText = "1. " + document.getElementById('group-1-name').value;
+      document.getElementById('title-grup-2').innerText = "2. " + document.getElementById('group-2-name').value;
+
+      document.getElementById('grid-group-1').innerHTML = group1Provinces.map((p, i) => renderProvinceCard(p, 1, i)).join('');
+      document.getElementById('grid-group-2').innerHTML = group2Provinces.map((p, i) => renderProvinceCard(p, 2, i)).join('');
+    }
+
+    function renderProvinceCard(p, group, i) {
+      if (!p.monthlyValues || p.monthlyValues.length !== 12) {
+        p.monthlyValues = createEmptyMonthly();
+      }
+
+      const totalNominal = p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+      const formatRupiah = (val) => new Intl.NumberFormat('id-ID').format(val);
+
+      let html = `
+        <div class="province-item">
+          <button class="btn-remove" onclick="removeProvince(${group}, ${i})">✕</button>
+          <input type="text" value="${p.name}" onchange="updateProvinceName(${group}, ${i}, this.value)" style="width:82%; font-weight:bold; margin-bottom:5px;">
+          
+          <div style="font-size:12px; color:#0284c7; font-weight:bold; margin-bottom:5px;">
+            Total 1 Tahun: Rp ${formatRupiah(totalNominal)}
+          </div>
+
+          <div class="quick-actions">
+            <button class="btn-quick" onclick="instantFillAllMonths(${group}, ${i})">⚡ Isi Sama Semua Bulan</button>
+            <button class="btn-toggle-month" onclick="toggleMonthlyInputs(${group}, ${i})">
+              ${p.showMonthly ? '▲ Sembunyikan Bulan' : '▼ Input Detail Per Bulan'}
+            </button>
+          </div>
+      `;
+
+      if (p.showMonthly) {
+        html += `<div class="monthly-inputs-grid">`;
+        monthNames.forEach((m, mIdx) => {
+          html += `
+            <div class="monthly-item">
+              <label>${m}</label>
+              <input type="number" value="${p.monthlyValues[mIdx] || ''}" 
+                onchange="updateMonthlyValue(${group}, ${i}, ${mIdx}, this.value)" placeholder="0">
+            </div>
+          `;
+        });
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+      return html;
+    }
+
+    function updateProvinceName(group, i, val) {
+      if (group === 1) group1Provinces[i].name = val;
+      else group2Provinces[i].name = val;
+    }
+
+    function updateMonthlyValue(group, i, mIdx, val) {
+      const list = group === 1 ? group1Provinces : group2Provinces;
+      if (!list[i].monthlyValues) list[i].monthlyValues = Array(12).fill(0);
+      list[i].monthlyValues[mIdx] = parseFloat(val) || 0;
+      
+      const cardTotalEl = document.querySelectorAll(`.province-item`)[group === 1 ? i : group1Provinces.length + i];
+      if (cardTotalEl) {
+        const totalNominal = list[i].monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+        const totalDiv = cardTotalEl.querySelector('div[style*="color:#0284c7"]');
+        if (totalDiv) {
+          totalDiv.innerText = `Total 1 Tahun: Rp ${new Intl.NumberFormat('id-ID').format(totalNominal)}`;
+        }
+      }
+    }
+
+    function instantFillAllMonths(group, i) {
+      const inputVal = prompt("Masukkan nominal per bulan (akan diisikan sama ke Januari - Desember):");
+      if (inputVal === null) return;
+      
+      const val = parseFloat(inputVal) || 0;
+      const list = group === 1 ? group1Provinces : group2Provinces;
+      list[i].monthlyValues = Array(12).fill(val);
+      renderGrids();
+    }
+
+    function toggleMonthlyInputs(group, i) {
+      const list = group === 1 ? group1Provinces : group2Provinces;
+      list[i].showMonthly = !list[i].showMonthly;
+      renderGrids();
+    }
+
+    function addProvince(group) {
+      if (group === 1) group1Provinces.push({ name: "WILAYAH BARU", monthlyValues: createEmptyMonthly(), showMonthly: true });
+      else group2Provinces.push({ name: "WILAYAH BARU", monthlyValues: createEmptyMonthly(), showMonthly: true });
+      renderGrids();
+    }
+
+    function removeProvince(group, index) {
+      if (group === 1) group1Provinces.splice(index, 1);
+      else group2Provinces.splice(index, 1);
+      renderGrids();
+    }
+
+    function clearForm() {
+      document.getElementById('group-1-target').value = '';
+      document.getElementById('group-2-target').value = '';
+      group1Provinces = createCleanDefaultG1();
+      group2Provinces = createCleanDefaultG2();
+      renderGrids();
+      document.getElementById('output-agpn-container').innerHTML = '';
+      const exportGroup = document.getElementById('export-buttons-group');
+      if (exportGroup) exportGroup.style.display = 'none';
+    }
+
+    function onYearChange() {
+      const year = document.getElementById('input-year').value;
+      document.getElementById('label-year').innerText = year;
+      clearForm();
+    }
+
+// ==========================================
+// FUNGSI LOAD DATA HISTORY AGP N (SAMA SEPERTI AGPC)
+// ==========================================
+// ==========================================
+// FUNGSI LOAD DATA HISTORY AGP N (FIXED)
+// ==========================================
+// ==========================================
+// FUNGSI LOAD DATA HISTORY AGP N (DENGAN FIX M01 - M12)
+// ==========================================
+async function loadDataByYear(year, autoRender = false) {
+  try {
+    const response = await fetch(`http://localhost:3000/api/get-agpn-target-by-year/${year}`);
+    const res = await response.json();
+
+    if (res.success && res.data) {
+      const header = res.data.header || {};
+      const listDetails = res.data.details || res.data.provinces || [];
+
+      document.getElementById('input-year').value = year;
+      document.getElementById('label-year').innerText = year;
+      
+      document.getElementById('group-1-name').value = header.group_1_name || header.group1_name || "LUAR PULAU";
+      document.getElementById('group-1-target').value = header.group_1_target || header.group1_target || '';
+      document.getElementById('group-2-name').value = header.group_2_name || header.group2_name || "BANDUNG - GARUT";
+      document.getElementById('group-2-target').value = header.group_2_target || header.group2_target || '';
+
+      if (listDetails.length > 0) {
+        const g1List = [];
+        const g2List = [];
+
+        listDetails.forEach(p => {
+          const pName = (p.province_name || p.area_name || p.name || '').trim().toUpperCase();
+          const gt = parseInt(p.group_type || p.group_index || p.group_no || 1);
+
+          // Baca eksplisit m01 s/d m12 dari objek DB
+          let mArr = [];
+          for (let m = 1; m <= 12; m++) {
+            const mKey2 = m < 10 ? `m0${m}` : `m${m}`;
+            const mKey1 = `m${m}`;
+            let val = 0;
+
+            if (p[mKey2] !== undefined && p[mKey2] !== null) val = p[mKey2];
+            else if (p[mKey1] !== undefined && p[mKey1] !== null) val = p[mKey1];
+            else if (Array.isArray(p.monthlyValues)) val = p.monthlyValues[m - 1];
+
+            mArr.push(parseFloat(val) || 0);
+          }
+
+          const provObj = {
+            name: pName || 'WILAYAH',
+            monthlyValues: mArr,
+            showMonthly: false
+          };
+
+          if (gt === 2 || ["BANDUNG", "GARUT"].includes(pName)) {
+            g2List.push(provObj);
+          } else {
+            g1List.push(provObj);
+          }
+        });
+
+        if (g1List.length > 0) group1Provinces = g1List;
+        if (g2List.length > 0) group2Provinces = g2List;
+      }
+    } else {
+      alert('Data target untuk tahun ' + year + ' tidak ditemukan!');
+      clearForm();
+      return;
+    }
+  } catch (err) {
+    console.error('Gagal memuat data tersimpan:', err);
+    alert('Terjadi kesalahan koneksi ke server!');
+    clearForm();
+    return;
+  }
+
+  renderGrids();
+
+  if (autoRender) {
+    renderCalculation();
+  }
+}
+// ==========================================
+// FUNGSI PROSES KALKULASI UTAMA
+// ==========================================
+function renderCalculation() {
+  const exportGroup = document.getElementById('export-buttons-group');
+  if (exportGroup) exportGroup.style.display = 'flex';
+
+  const year = document.getElementById('input-year').value;
+  const g1Name = document.getElementById('group-1-name').value;
+  const g2Name = document.getElementById('group-2-name').value;
+
+  const fullMonths = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+  const formatRupiah = (val) => new Intl.NumberFormat('id-ID').format(Math.round(parseFloat(val) || 0));
+
+  // Hitung Total Target Header
+  let totalYearG1 = parseFloat(document.getElementById('group-1-target').value) || 0;
+  if (totalYearG1 === 0) {
+    group1Provinces.forEach(p => {
+      totalYearG1 += p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+    });
+  }
+
+  let totalYearG2 = parseFloat(document.getElementById('group-2-target').value) || 0;
+  if (totalYearG2 === 0) {
+    group2Provinces.forEach(p => {
+      totalYearG2 += p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+    });
+  }
+
+  let html = `<div class="card-section" id="table-export-area" style="background:#fff; padding:20px;">`;
+
+  // Header Box Summary
+  html += `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+      <div style="font-size:18px; font-weight:bold; color:#800000; margin-top:5px;">
+        TARGET DIVISI AGP N ${year}
+      </div>
+      <div style="display:flex; gap:15px;">
+        <div style="border:2px solid #000; padding:6px 20px; background:#fff; text-align:center; border-radius:4px;">
+          <small style="font-weight:bold; font-size:11px;">${g1Name}</small><br>
+          <b style="font-size:16px; color:#000;">${formatRupiah(totalYearG1)}</b>
+        </div>
+        <div style="border:2px solid #000; padding:6px 20px; background:#fff; text-align:center; border-radius:4px;">
+          <small style="font-weight:bold; font-size:11px;">${g2Name}</small><br>
+          <b style="font-size:16px; color:#000;">${formatRupiah(totalYearG2)}</b>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // --- TABEL 1: LUAR PULAU ---
+  const subGroup1 = group1Provinces.filter(p => ["LAMPUNG", "PALEMBANG"].includes(p.name.toUpperCase()));
+  const subGroup2 = group1Provinces.filter(p => ["BENGKULU", "BANGKA BELITUNG", "JAMBI", "PADANG", "RIAU"].includes(p.name.toUpperCase()));
+  const subGroup3 = group1Provinces.filter(p => ["KALIMANTAN BARAT", "SULAWESI SELATAN"].includes(p.name.toUpperCase()));
+  const subGroup4 = group1Provinces.filter(p => !subGroup1.includes(p) && !subGroup2.includes(p) && !subGroup3.includes(p) && !["BANDUNG", "GARUT"].includes(p.name.toUpperCase()));
+
+  const subGroupsG1 = [
+    { no: 1, items: subGroup1 },
+    { no: 2, items: subGroup2 },
+    { no: 3, items: subGroup3 },
+    { no: 4, items: subGroup4 }
+  ];
+
+  html += `<table class="table-agpn" style="margin-bottom:0;">
+            <thead>
+              <tr>
+                <th class="bg-head-agpn" style="width:30px;">NO</th>
+                <th class="bg-head-agpn" style="width:180px;">PROVINSI</th>`;
+  fullMonths.forEach(m => html += `<th class="bg-head-agpn">${m}</th>`);
+  html += `<th class="bg-head-agpn">TOTAL</th></tr></thead><tbody>`;
+
+  let g1GrandMonthly = Array(12).fill(0);
+  let g1GrandYearTotal = 0;
+
+  subGroupsG1.forEach(sg => {
+    if (!sg.items || sg.items.length === 0) return;
+
+    let subMonthlySum = Array(12).fill(0);
+    let subYearSum = 0;
+
+    sg.items.forEach((p, idx) => {
+      const rowYearTotal = p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+      subYearSum += rowYearTotal;
+
+      html += `<tr>`;
+      if (idx === 0) {
+        html += `<td rowspan="${sg.items.length}" style="text-align:center; font-weight:bold; vertical-align:middle; background:#f8fafc; border:1px solid #000;">${sg.no}</td>`;
+      }
+      html += `<td style="text-align:left;"><b>${p.name}</b></td>`;
+
+      for (let m = 0; m < 12; m++) {
+        const valM = parseFloat(p.monthlyValues[m]) || 0;
+        subMonthlySum[m] += valM;
+        g1GrandMonthly[m] += valM;
+        html += `<td>${formatRupiah(valM)}</td>`;
+      }
+      html += `<td><b>${formatRupiah(rowYearTotal)}</b></td></tr>`;
+    });
+
+    html += `<tr style="background:#e2e8f0; font-weight:bold;"><td colspan="2" style="text-align:center; background:#cbd5e1;">TOTAL</td>`;
+    for (let m = 0; m < 12; m++) {
+      html += `<td>${formatRupiah(subMonthlySum[m])}</td>`;
+    }
+    html += `<td>${formatRupiah(subYearSum)}</td></tr>`;
+
+    g1GrandYearTotal += subYearSum;
+  });
+
+  html += `<tr style="background:#fbcfe8; font-weight:bold; font-size:12px;">
+            <td colspan="2" style="text-align:center; background:#f43f5e; color:#fff;">GRAND TOTAL</td>`;
+  for (let m = 0; m < 12; m++) {
+    html += `<td>${formatRupiah(g1GrandMonthly[m])}</td>`;
+  }
+  html += `<td>${formatRupiah(g1GrandYearTotal)}</td></tr>`;
+  html += `</tbody></table>`;
+
+  // PEMISAH SPACE ANTARA GRUP 1 DAN GRUP 2
+  html += `<div style="height: 35px; background: transparent;"></div>`;
+
+  // --- TABEL 2: BANDUNG - GARUT ---
+  html += `<table class="table-agpn">
+            <thead>
+              <tr>
+                <th class="bg-head-agpn" style="width:30px;">NO</th>
+                <th class="bg-head-agpn" style="width:180px;">PROVINSI</th>`;
+  fullMonths.forEach(m => html += `<th class="bg-head-agpn">${m}</th>`);
+  html += `<th class="bg-head-agpn">TOTAL</th></tr></thead><tbody>`;
+
+  let g2MonthlySum = Array(12).fill(0);
+  let g2YearSum = 0;
+
+  group2Provinces.forEach((p, idx) => {
+    const rowYearTotal = p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+    g2YearSum += rowYearTotal;
+
+    html += `<tr>`;
+    if (idx === 0) {
+      html += `<td rowspan="${group2Provinces.length}" style="text-align:center; font-weight:bold; vertical-align:middle; background:#f8fafc; border:1px solid #000;">5</td>`;
+    }
+    html += `<td style="text-align:left;"><b>${p.name}</b></td>`;
+
+    for (let m = 0; m < 12; m++) {
+      const valM = parseFloat(p.monthlyValues[m]) || 0;
+      g2MonthlySum[m] += valM;
+      html += `<td>${formatRupiah(valM)}</td>`;
+    }
+    html += `<td><b>${formatRupiah(rowYearTotal)}</b></td></tr>`;
+  });
+
+  html += `<tr style="background:#fef08a; font-weight:bold;"><td colspan="2" style="text-align:center; background:#eab308; color:#000;">TOTAL</td>`;
+  for (let m = 0; m < 12; m++) {
+    html += `<td>${formatRupiah(g2MonthlySum[m])}</td>`;
+  }
+  html += `<td>${formatRupiah(g2YearSum)}</td></tr>`;
+
+  html += `</tbody></table></div>`;
+
+  document.getElementById('output-agpn-container').innerHTML = html;
+}
+
+async function saveToDatabase() {
+  const yearVal = parseInt(document.getElementById('input-year').value);
+  const g1Name = document.getElementById('group-1-name').value;
+  const g2Name = document.getElementById('group-2-name').value;
+
+  const details = [];
+
+  const extractGroupData = (groupNum, provList) => {
+    provList.forEach((p, i) => {
+      // PERBAIKAN: Gunakan data array p.monthlyValues yang sudah ada di memory state!
+      let mArr = (p.monthlyValues && p.monthlyValues.length === 12) 
+        ? p.monthlyValues.map(v => parseFloat(v) || 0) 
+        : Array(12).fill(0);
+
+      // Jika input sedang terbuka di layar, ambil nilai terbaru dari DOM input
+      const gridId = groupNum === 1 ? 'grid-group-1' : 'grid-group-2';
+      const gridEl = document.getElementById(gridId);
+      const cardItems = gridEl ? gridEl.querySelectorAll('.province-item') : [];
+      const card = cardItems[i];
+
+      if (card) {
+        const inputs = card.querySelectorAll('.monthly-inputs-grid input');
+        if (inputs && inputs.length === 12) {
+          inputs.forEach((inp, idx) => {
+            mArr[idx] = parseFloat(inp.value) || 0;
+          });
+        }
+      }
+
+      // Sync balik ke memory
+      p.monthlyValues = mArr;
+
+      const rowSum = mArr.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+      const item = {
+        group_type: groupNum,
+        group_index: groupNum,
+        province_code: `AGPN-G${groupNum}-${i + 1}`,
+        province_name: p.name,
+        annual_target: rowSum
+      };
+
+      for (let m = 1; m <= 12; m++) {
+        const mKey = m < 10 ? `m0${m}` : `m${m}`;
+        item[mKey] = mArr[m - 1] || 0;
+      }
+
+      details.push(item);
+    });
+  };
+
+  extractGroupData(1, group1Provinces);
+  extractGroupData(2, group2Provinces);
+
+  let calcGroup1Target = group1Provinces.reduce((s, p) => s + p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0), 0);
+  let calcGroup2Target = group2Provinces.reduce((s, p) => s + p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0), 0);
+
+  const payload = {
+    year: yearVal,
+    totalTarget: calcGroup1Target + calcGroup2Target,
+    group1Name: g1Name,
+    group1Target: calcGroup1Target,
+    group2Name: g2Name,
+    group2Target: calcGroup2Target,
+    details: details,
+    provinces: details
+  };
+
+  try {
+    const response = await fetch('http://localhost:3000/api/save-agpn-target', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const res = await response.json();
+    if (res.success) {
+      alert('✅ ' + res.message);
+    } else {
+      alert('❌ Gagal simpan: ' + res.message);
+    }
+  } catch (err) {
+    console.error(err);
+    alert('❌ Terjadi kesalahan saat terhubung ke server backend!');
+  }
+}
+
+    async function openHistoryModal() {
+      const modal = document.getElementById('modal-history');
+      const selectYear = document.getElementById('select-history-year');
+      selectYear.innerHTML = `<option value="">-- Memuat Tahun... --</option>`;
+      modal.classList.add('active');
+
+      try {
+        const res = await fetch('http://localhost:3000/api/agpn-history-years');
+        const data = await res.json();
+
+        if (data.success && data.years.length > 0) {
+          const formatRupiah = (val) => new Intl.NumberFormat('id-ID').format(parseFloat(val) || 0);
+          selectYear.innerHTML = `<option value="">-- Pilih Tahun --</option>` +
+            data.years.map(y => `
+              <option value="${y.year}">${y.year} (Target: ${formatRupiah(y.total_target)})</option>
+            `).join('');
+        } else {
+          selectYear.innerHTML = `<option value="">-- Belum ada data tersimpan --</option>`;
+        }
+      } catch (err) {
+        console.error(err);
+        selectYear.innerHTML = `<option value="">-- Gagal memuat tahun --</option>`;
+      }
+    }
+
+  async function loadSelectedHistoryYear() {
+  const selectedYear = document.getElementById('select-history-year').value;
+  if (!selectedYear) {
+    alert('Silakan pilih tahun terlebih dahulu!');
+    return;
+  }
+
+  closeHistoryModal();
+  await loadDataByYear(selectedYear, true);
+}
+
+    function closeHistoryModal() {
+      document.getElementById('modal-history').classList.remove('active');
+    }
+
+    async function openLogModal() {
+      document.getElementById('modal-log').classList.add('active');
+      const tbody = document.getElementById('tbody-log');
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>`;
+
+      try {
+        const res = await fetch('http://localhost:3000/api/change-logs?divisi=AGPN');
+        const data = await res.json();
+        if (data.success && data.logs.length > 0) {
+          tbody.innerHTML = data.logs.map(l => `
+            <tr>
+              <td>${l.formatted_date}</td>
+              <td style="text-align:center;">${l.year}</td>
+              <td>${l.area_code}</td>
+              <td><span style="color:red; text-decoration:line-through;">${l.old_name}</span></td>
+              <td><b style="color:green;">${l.new_name}</b></td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada log perubahan nama area.</td></tr>`;
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat log update.</td></tr>`;
+      }
+    }
+
+    function closeLogModal() {
+      document.getElementById('modal-log').classList.remove('active');
+    }
+
+    function exportToExcel() {
+      const container = document.getElementById('output-agpn-container');
+      if (!container || !container.innerHTML) {
+        alert('Jalankan Proses Kalkulasi terlebih dahulu!');
+        return;
+      }
+
+      const year = document.getElementById('input-year').value;
+      const g1Name = document.getElementById('group-1-name').value;
+      const g2Name = document.getElementById('group-2-name').value;
+
+      const formatRupiah = (val) => new Intl.NumberFormat('id-ID').format(val);
+
+      let totalYearG1 = parseFloat(document.getElementById('group-1-target').value) || 0;
+      if (totalYearG1 === 0) {
+        group1Provinces.forEach(p => {
+          totalYearG1 += p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+        });
+      }
+
+      let totalYearG2 = parseFloat(document.getElementById('group-2-target').value) || 0;
+      if (totalYearG2 === 0) {
+        group2Provinces.forEach(p => {
+          totalYearG2 += p.monthlyValues.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+        });
+      }
+
+      const tablesHTML = Array.from(container.querySelectorAll('table'))
+        .map(t => t.outerHTML)
+        .join('<div style="height:15px;"></div>');
+
+      let excelHTML = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <style>
+            table { border-collapse: collapse; margin-bottom: 10px; }
+            th, td { border: 1px solid #000000; padding: 5px; text-align: center; font-family: Calibri, sans-serif; font-size: 10pt; }
+            .title-text { font-size: 14pt; font-weight: bold; color: #800000; text-align: left; border: none; }
+            .box-header { border: 2px solid #000000 !important; background-color: #ffffff; text-align: center; vertical-align: middle; }
+            .bg-head-agpn { background-color: #ffe6e6 !important; color: #800000; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <table style="width: 100%; border: none;">
+            <tr>
+              <td colspan="8" class="title-text" style="border: none;">TARGET DIVISI AGP N ${year}</td>
+              <td colspan="3" class="box-header">
+                <small style="font-weight: bold; font-size: 9pt;">${g1Name}</small><br>
+                <b style="font-size: 12pt;">${formatRupiah(totalYearG1)}</b>
+              </td>
+              <td colspan="3" class="box-header">
+                <small style="font-weight: bold; font-size: 9pt;">${g2Name}</small><br>
+                <b style="font-size: 12pt;">${formatRupiah(totalYearG2)}</b>
+              </td>
+            </tr>
+          </table>
+          <br>
+          ${tablesHTML}
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob([excelHTML], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Target_AGP_N_${year}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportToPDF() {
+      if (typeof html2pdf === 'undefined') return alert('Library html2pdf belum di-download ke folder js/!');
+      
+      const element = document.getElementById('output-agpn-container');
+      if (!element || !element.innerHTML.trim()) {
+        return alert('Jalankan Proses Kalkulasi terlebih dahulu!');
+      }
+
+      const year = document.getElementById('input-year').value;
+
+      const pdfStyle = document.createElement('style');
+      pdfStyle.id = 'pdf-export-style';
+      pdfStyle.innerHTML = `
+        #output-agpn-container { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+        #output-agpn-container table { width: 100% !important; table-layout: auto !important; border-collapse: collapse !important; margin-bottom: 12px !important; }
+        #output-agpn-container th, #output-agpn-container td { 
+          padding: 3px 1px !important; 
+          font-size: 7pt !important; 
+          white-space: nowrap !important; 
+          word-break: keep-all !important; 
+        }
+      `;
+      document.head.appendChild(pdfStyle);
+
+      const opt = {
+        margin: [0.15, 0.15, 0.15, 0.15],
+        filename: `Target_AGP_N_${year}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        const appliedStyle = document.getElementById('pdf-export-style');
+        if (appliedStyle) appliedStyle.remove();
+      }).catch(err => {
+        console.error(err);
+        const appliedStyle = document.getElementById('pdf-export-style');
+        if (appliedStyle) appliedStyle.remove();
+      });
+    }
+
+    async function exportToGambar() {
+      if (typeof html2canvas === 'undefined') return alert('Library html2canvas belum dimuat!');
+      if (typeof JSZip === 'undefined' || typeof saveAs === 'undefined') return alert('Library JSZip belum dimuat!');
+
+      const container = document.getElementById('output-agpn-container');
+      if (!container || !container.innerHTML.trim()) return alert('Jalankan Proses Kalkulasi terlebih dahulu!');
+
+      const year = document.getElementById('input-year').value;
+      const zip = new JSZip();
+      const folder = zip.folder(`Gambar_Target_AGP_N_${year}`);
+
+      const tables = container.querySelectorAll('table');
+      for (let i = 0; i < tables.length; i++) {
+        const tableEl = tables[i];
+        let title = i === 0 ? "Grup_1_Luar_Pulau" : "Grup_2_Bandung_Garut";
+
+        const canvas = await html2canvas(tableEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/png').split(',')[1];
+        folder.file(`Tabel_${i + 1}_${title}_AGP_N_${year}.png`, imgData, { base64: true });
+      }
+
+      zip.generateAsync({ type: 'blob' }).then(function(content) {
+        saveAs(content, `Export_Gambar_Target_AGP_N_${year}.zip`);
+      });
+    }
+
+    window.onload = function() {
+      clearForm();
+    };
+  </script>
+</body>
+</html>

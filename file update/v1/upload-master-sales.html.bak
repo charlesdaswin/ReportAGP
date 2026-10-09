@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Data Master Sales - Anugerah Graha Plasindo</title>
+
+    <link rel="icon" type="image/png" href="LOGO-AGP-big.png" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/html2canvas.min.js"></script>
+    <script src="js/jszip.min.js"></script>
+    <script src="js/FileSaver.min.js"></script>
+
+    <style>
+      .upload-box {
+        border: 2px dashed #cbd5e1;
+        padding: 25px;
+        border-radius: 8px;
+        text-align: center;
+        background: #f8fafc;
+        margin-top: 15px;
+      }
+      .loading-spinner {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+        color: #0284c7;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      .mode-selection-box {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin: 15px 0;
+        background: #ffffff;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+      }
+      .radio-label {
+        font-size: 13px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn-submit-upload {
+        background: #16a34a;
+        color: white;
+        padding: 10px 24px;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 14px;
+        transition: 0.2s;
+      }
+      .btn-submit-upload:hover {
+        background: #15803d;
+      }
+      .file-list-preview {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #0369a1;
+        font-weight: bold;
+      }
+
+      /* STYLING PREVIEW TABEL & PAGINASI */
+      .preview-container {
+        display: none;
+        margin-top: 25px;
+      }
+      .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        margin-top: 10px;
+      }
+      .table-preview {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      .table-preview th, .table-preview td {
+        border: 1px solid #cbd5e1;
+        padding: 8px;
+        text-align: left;
+      }
+      .table-preview th {
+        background: #800000;
+        color: #fff;
+        text-align: center;
+        font-weight: bold;
+      }
+      .table-preview tr:nth-child(even) { background: #f8fafc; }
+
+      /* PAGINATION BAR */
+      .pagination-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        font-size: 12px;
+        color: #475569;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .pagination-buttons {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .btn-page {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+      .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+      .page-info { font-weight: bold; color: #1e293b; }
+
+      /* ===== LAPORAN HARIAN SALES (GENERATE TABEL) ===== */
+      .daily-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+      .daily-toolbar input[type="date"] { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; }
+      .btn-daily { border: none; color: #fff; padding: 9px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; }
+      .btn-daily:disabled { background: #94a3b8 !important; cursor: not-allowed; }
+      .btn-daily-process { background: #800000; }
+      .btn-daily-process:hover { background: #660000; }
+      .btn-daily-save { background: #16a34a; }
+      .btn-daily-zip { background: #0284c7; }
+      .daily-warning { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-top: 10px; }
+      .rpt-date-bar { display: inline-block; background: #ff0000; color: #fff; font-weight: bold; font-size: 12px; padding: 4px 14px; border: 1px solid #990000; margin: 15px 0 10px; }
+      .rpt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+      .rpt-col { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+      .rpt-col-title { font-weight: bold; font-size: 13px; color: #334155; }
+      .rpt-card { display: flex; gap: 8px; align-items: flex-start; }
+      .rpt-no { font-size: 22px; font-weight: bold; color: #1e293b; min-width: 24px; text-align: center; padding-top: 30px; }
+      .rpt-card-body { flex: 1; min-width: 0; overflow-x: auto; }
+      .btn-png { background: #475569; color: #fff; border: none; border-radius: 4px; padding: 3px 9px; font-size: 11px; cursor: pointer; margin-bottom: 4px; }
+      .btn-png:hover { background: #1e293b; }
+      table.rpt-table { border-collapse: collapse; width: 100%; font-family: Calibri, Arial, sans-serif; font-size: 11px; background: #fff; color: #000; }
+      table.rpt-table th, table.rpt-table td { border: 1px solid #333; padding: 3px 6px; white-space: nowrap; }
+      table.rpt-table td.num { text-align: right; }
+      table.rpt-table td.ctr, table.rpt-table th { text-align: center; }
+      table.rpt-agpc th, table.rpt-agpc tr.rpt-total td { background: #4f5f3a; color: #fff; font-weight: bold; }
+      table.rpt-agps th, table.rpt-agps tr.rpt-total td { background: #3b64a0; color: #fff; font-weight: bold; }
+      table.rpt-table tr.rpt-q td { font-weight: bold; }
+      table.rpt-table tr.rpt-q td.q-label { background: #f2dcdb; color: #7f0000; text-align: center; }
+      table.rpt-table td.neg { color: #c00000; }
+      @media (max-width: 1100px) { .rpt-grid { grid-template-columns: 1fr; } }
+
+      /* FILTER PREVIEW DATA UPLOAD */
+      .master-filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+      .master-filter-bar label { font-size: 12px; font-weight: bold; color: #475569; }
+      .master-filter-bar select, .master-filter-bar input[type="date"] { padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; }
+      .btn-filter { background: #0284c7; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+      .btn-filter:hover { background: #0369a1; }
+      .btn-filter-reset { background: #64748b; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+      .btn-filter-reset:hover { background: #475569; }
+    </style>
+  </head>
+  <body>
+    <button class="floating-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML = 'AGP'" />
+    </button>
+
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display = 'none'" />
+        <h2>REPORT SYSTEM</h2>
+      </div>
+      <ul class="sidebar-menu">
+        <li>
+          <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+            <span>Target Divisi Tahunan</span>
+            <span class="arrow-icon" id="arrow-target">▶</span>
+          </a>
+          <ul class="submenu" id="submenu-target">
+            <li><a href="target-agpc.html">AGPC</a></li>
+            <li><a href="target-agps.html">AGPS</a></li>
+            <li><a href="target-agpn.html">AGP N</a></li>
+          </ul>
+        </li>
+        <li><a href="history-transaksi.html">History Transaksi</a></li>
+        <li>
+    <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+      <span>Laporan Harian Sales</span>
+      <span class="arrow-icon" id="arrow-sales">▶</span>
+    </a>
+    <ul class="submenu" id="submenu-sales">
+      <li><a href="list-sales-route.html">List Sales Route</a></li>
+      <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+      <li><a href="faktur-batal.html">Faktur Batal</a></li>
+      <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+    </ul>
+  </li>
+        <li><a href="faktur-batal.html">Laporan Faktur Batal</a></li>
+        <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+        <li><a href="history-customer.html">History Customer</a></li>
+        <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+        <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+        <li>
+          <a href="#" onclick="handleLogout()" style="color: #ff9999; margin-top: 20px; border-top: 1px solid #990000;">🚪 Logout</a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="main-content">
+      <div class="top-bar">
+        <div class="page-title">UPLOAD DATA MASTER SALES</div>
+      </div>
+
+      <div class="card">
+        <h3>📤 Unggah File Excel Master Sales</h3>
+        <p style="font-size: 13px; color: #64748b; margin-top: 5px">
+          Pilih hingga <b>3 file Excel sekaligus</b> untuk diunggah. Pilih mode pengerjaan data sesuai kebutuhan.
+        </p>
+
+        <div class="upload-box">
+          <!-- Input Multiple Files -->
+          <input
+            type="file"
+            id="file-excel-omset"
+            accept=".xlsx, .xls"
+            multiple
+            onchange="handleFileSelect(this)"
+            style="font-size: 14px"
+          />
+          
+          <div class="file-list-preview" id="selected-files-text"></div>
+
+          <!-- Opsi Mode Pengolahan Data -->
+          <div class="mode-selection-box">
+            <label class="radio-label" style="color: #dc2626;">
+              <input type="radio" name="uploadMode" value="overwrite" checked />
+              🔄 Timpa Data Lama (Overwrite Bulan Ini)
+            </label>
+            <label class="radio-label" style="color: #0284c7;">
+              <input type="radio" name="uploadMode" value="append" />
+              ➕ Gabungkan Data (Append ke Data Yang Ada)
+            </label>
+          </div>
+
+          <button type="button" id="btn-upload" class="btn-submit-upload" onclick="uploadExcel()">
+            🚀 Unggah & Proses File Excel
+          </button>
+        </div>
+
+        <div class="loading-spinner" id="loading-indicator">
+          <span>⏳ Sedang memproses file dan menyimpan data ke PostgreSQL, harap tunggu...</span>
+        </div>
+
+        <!-- PREVIEW DATA TABEL -->
+        <div class="preview-container" id="preview-container">
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h4 style="color: #800000; margin-bottom: 2px;" id="preview-title">📊 Preview Data Upload Hari Ini</h4>
+              <p style="font-size: 12px; color: #64748b; margin: 0;" id="preview-desc">
+                Menampilkan data master sales yang di-upload pada hari ini.
+              </p>
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #475569; font-weight: bold;">Tampilkan: </label>
+              <select id="select-limit" onchange="changeLimit()" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 12px;">
+                <option value="10" selected>10 data/hal</option>
+                <option value="25">25 data/hal</option>
+                <option value="50">50 data/hal</option>
+                <option value="100">100 data/hal</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- FILTER BULAN / TAHUN / TANGGAL -->
+          <div class="master-filter-bar">
+            <label>Bulan:</label>
+            <select id="filter-bulan" onchange="onMonthYearChange()">
+              <option value="">Semua Bulan</option>
+              <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+              <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+              <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+              <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+            </select>
+            <label>Tahun:</label>
+            <select id="filter-tahun" onchange="onMonthYearChange()">
+              <option value="">Semua Tahun</option>
+            </select>
+            <label>Tanggal:</label>
+            <input type="date" id="filter-tanggal" onchange="onDateChange()" />
+            <button type="button" class="btn-filter" onclick="applyFilter()">🔍 Terapkan Filter</button>
+            <button type="button" class="btn-filter-reset" onclick="resetFilter()">↺ Reset (Upload Hari Ini)</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table-preview">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Nama Divisi</th>
+                  <th>Kode Area</th>
+                  <th>Area</th>
+                  <th>Kode Salesman</th>
+                  <th>Nama Salesman</th>
+                  <th>Nama Pasar</th>
+                  <th>Kode Customer</th>
+                  <th>Nama Customer</th>
+                  <th>Kode Barang</th>
+                  <th>Nama Barang</th>
+                  <th>No Transaksi</th>
+                  <th>Tanggal</th>
+                  <th>Kode Kunjungan</th>
+                  <th>Qty (Crt)</th>
+                  <th>DPP (Rp)</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-preview">
+                <tr><td colspan="16" style="text-align: center; color: #64748b;">Memuat preview...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- BARIS PAGINASI -->
+          <div class="pagination-bar">
+            <div id="page-count-info">Menampilkan 0 dari 0 data</div>
+            <div class="pagination-buttons">
+              <button class="btn-page" id="btn-prev" onclick="prevPage()">◀ Sebelumnya</button>
+              <span class="page-info" id="text-page-info">Halaman 1 / 1</span>
+              <button class="btn-page" id="btn-next" onclick="nextPage()">Selanjutnya ▶</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== CARD GENERATE LAPORAN HARIAN SALES ===== -->
+      <div class="card" style="margin-top: 20px;" id="card-daily-report">
+        <h3>📑 Generate Laporan Harian Sales (AGPC &amp; AGPS)</h3>
+        <p style="font-size: 13px; color: #64748b; margin-top: 5px">
+          Membuat tabel Target / OA / Cust / Omset / Sisa per salesman dari data Upload Master (tanggal 1 s/d tanggal proses),
+          History Transaksi, List Sales Route dan Target Tahunan. Hijau = AGPC, Biru = AGPS.
+        </p>
+
+        <div class="daily-toolbar">
+          <label style="font-size: 12px; font-weight: bold; color: #475569;">Tanggal Proses:</label>
+          <input type="date" id="daily-report-date" />
+          <button type="button" class="btn-daily btn-daily-process" id="btn-daily-process" onclick="generateDailyReport()">⚙️ Process</button>
+          <button type="button" class="btn-daily btn-daily-save" id="btn-daily-save" onclick="saveDailyReport()" style="display:none;">💾 Simpan ke Database</button>
+          <button type="button" class="btn-daily btn-daily-zip" id="btn-daily-zip" onclick="downloadAllPng()" style="display:none;">🖼️ Download Semua PNG (ZIP)</button>
+        </div>
+
+        <div id="daily-warnings"></div>
+        <div id="daily-report-output"></div>
+      </div>
+    </div>
+
+    <script src="js/sidebar.js"></script>
+    <script>
+      if (!localStorage.getItem("agp_user_logged")) window.location.href = "index.html";
+
+      function handleLogout() {
+        if (confirm("Apakah Anda yakin ingin logout?")) {
+          localStorage.removeItem("agp_user_logged");
+          window.location.href = "index.html";
+        }
+      }
+
+      // STATE PAGINASI
+      let currentPage = 1;
+      let currentLimit = 10;
+      let totalPages = 1;
+
+      // PREVIEW FILE NAMA YANG DIPILIH
+      function handleFileSelect(input) {
+        const fileText = document.getElementById('selected-files-text');
+        if (input.files.length > 3) {
+          alert('⚠️ Maksimal file yang dapat diunggah sekaligus adalah 3 file!');
+          input.value = '';
+          fileText.innerText = '';
+          return;
+        }
+
+        if (input.files.length > 0) {
+          const names = Array.from(input.files).map(f => f.name).join(', ');
+          fileText.innerText = `📎 File Terpilih (${input.files.length}): ${names}`;
+        } else {
+          fileText.innerText = '';
+        }
+      }
+
+      // FETCH PREVIEW DATA DENGAN PAGINASI + FILTER BULAN / TAHUN / TANGGAL
+      const NAMA_BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+      function getFilterParams() {
+        return {
+          month: document.getElementById('filter-bulan').value,
+          year: document.getElementById('filter-tahun').value,
+          date: document.getElementById('filter-tanggal').value
+        };
+      }
+
+      function onDateChange() {
+        // Pilih tanggal -> sinkronkan bulan & tahun
+        const d = document.getElementById('filter-tanggal').value;
+        if (!d) return;
+        const [y, m] = d.split('-');
+        document.getElementById('filter-bulan').value = String(parseInt(m));
+        const sel = document.getElementById('filter-tahun');
+        if (![...sel.options].some(o => o.value === y)) sel.add(new Option(y, y));
+        sel.value = y;
+      }
+
+      function onMonthYearChange() {
+        // Ganti bulan/tahun -> kosongkan filter tanggal supaya tidak bentrok
+        document.getElementById('filter-tanggal').value = '';
+      }
+
+      function applyFilter() {
+        currentPage = 1;
+        loadTodayPreview();
+      }
+
+      function resetFilter() {
+        document.getElementById('filter-bulan').value = '';
+        document.getElementById('filter-tahun').value = '';
+        document.getElementById('filter-tanggal').value = '';
+        currentPage = 1;
+        loadFilterYears();
+        loadTodayPreview();
+      }
+
+      async function loadFilterYears() {
+        try {
+          const response = await fetch('http://localhost:3000/api/master-sales-years');
+          const result = await response.json();
+          if (!result.success) return;
+          const sel = document.getElementById('filter-tahun');
+          const current = sel.value;
+          sel.innerHTML = '<option value="">Semua Tahun</option>' + result.years.map(y => `<option value="${y}">${y}</option>`).join('');
+          if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+        } catch (err) {
+          console.error('Gagal memuat daftar tahun:', err);
+        }
+      }
+
+      async function loadTodayPreview() {
+        const tbody = document.getElementById('tbody-preview');
+        const f = getFilterParams();
+        const isFiltered = !!(f.month || f.year || f.date);
+
+        let url = `http://localhost:3000/api/today-uploaded-sales?page=${currentPage}&limit=${currentLimit}`;
+        if (f.date) url += `&date=${encodeURIComponent(f.date)}`;
+        else {
+          if (f.year) url += `&year=${encodeURIComponent(f.year)}`;
+          if (f.month) url += `&month=${encodeURIComponent(f.month)}`;
+        }
+
+        // Judul sesuai mode (upload hari ini / hasil filter)
+        document.getElementById('preview-container').style.display = 'block';
+        if (isFiltered) {
+          let label;
+          if (f.date) {
+            const [y, m, d] = f.date.split('-');
+            label = `Tanggal ${d}/${m}/${y}`;
+          } else {
+            label = [f.month ? NAMA_BULAN[parseInt(f.month) - 1] : null, f.year || null].filter(Boolean).join(' ');
+          }
+          document.getElementById('preview-title').innerText = `📊 Data Master Sales - ${label}`;
+          document.getElementById('preview-desc').innerText = 'Menampilkan data master sales berdasarkan tanggal transaksi sesuai filter.';
+        } else {
+          document.getElementById('preview-title').innerText = '📊 Preview Data Upload Hari Ini';
+          document.getElementById('preview-desc').innerText = 'Menampilkan data master sales yang di-upload pada hari ini.';
+        }
+
+        try {
+          const response = await fetch(url);
+          const result = await response.json();
+
+          if (result.success && result.data.length > 0) {
+            tbody.innerHTML = result.data.map(item => `
+              <tr>
+                <td>${item.month || '-'}</td>
+                <td><b>${item.nama_divisi || '-'}</b></td>
+                <td style="text-align: center;"><span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:bold;">${item.kode_area || '-'}</span></td>
+                <td>${item.area || '-'}</td>
+                <td>${item.kode_salesman || '-'}</td>
+                <td><b>${item.nama_salesman || '-'}</b></td>
+                <td>${item.nama_pasar || '-'}</td>
+                <td>${item.kode_customer || '-'}</td>
+                <td>${item.nama_customer || '-'}</td>
+                <td>${item.kode_barang || '-'}</td>
+                <td>${item.nama_barang || '-'}</td>
+                <td>${item.no_transaksi || '-'}</td>
+                <td style="text-align: center;">${item.tanggal || '-'}</td>
+                <td style="text-align: center;">${item.kode_kunjungan || '-'}</td>
+                <td style="text-align: right;">${item.qty_crt}</td>
+                <td style="text-align: right; font-weight: bold;${parseFloat(item.dpp_rp) < 0 ? ' color:#dc2626;' : ''}">${parseFloat(item.dpp_rp).toLocaleString('id-ID')}</td>
+              </tr>
+            `).join('');
+
+            totalPages = result.pagination.totalPages;
+            const startNo = (currentPage - 1) * currentLimit + 1;
+            const endNo = Math.min(currentPage * currentLimit, result.pagination.totalRows);
+            const totalDppTxt = Math.round(result.totalDpp || 0).toLocaleString('id-ID');
+
+            document.getElementById('page-count-info').innerText = `Menampilkan ${startNo} - ${endNo} dari total ${result.pagination.totalRows.toLocaleString('id-ID')} data | Total DPP: Rp ${totalDppTxt}`;
+            document.getElementById('text-page-info').innerText = `Halaman ${currentPage} / ${totalPages}`;
+
+            document.getElementById('btn-prev').disabled = (currentPage === 1);
+            document.getElementById('btn-next').disabled = (currentPage === totalPages);
+          } else {
+            const msg = isFiltered ? 'Tidak ada data master sales untuk filter yang dipilih.' : 'Belum ada data yang di-upload hari ini.';
+            tbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color: #94a3b8;">${msg}</td></tr>`;
+            totalPages = 1;
+            document.getElementById('page-count-info').innerText = 'Menampilkan 0 data';
+            document.getElementById('text-page-info').innerText = 'Halaman 1 / 1';
+            document.getElementById('btn-prev').disabled = true;
+            document.getElementById('btn-next').disabled = true;
+          }
+        } catch (err) {
+          console.error(err);
+          tbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color: #ef4444;">Gagal memuat preview data.</td></tr>`;
+        }
+      }
+
+      function prevPage() {
+        if (currentPage > 1) {
+          currentPage--;
+          loadTodayPreview();
+        }
+      }
+
+      function nextPage() {
+        if (currentPage < totalPages) {
+          currentPage++;
+          loadTodayPreview();
+        }
+      }
+
+      function changeLimit() {
+        currentLimit = parseInt(document.getElementById('select-limit').value);
+        currentPage = 1;
+        loadTodayPreview();
+      }
+
+      // UPLOAD EXCEL MULTIPLE FILES
+      async function uploadExcel() {
+        const fileInput = document.getElementById('file-excel-omset');
+        const btnUpload = document.getElementById('btn-upload');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const mode = document.querySelector('input[name="uploadMode"]:checked').value;
+
+        if (!fileInput || fileInput.files.length === 0) {
+          alert('⚠️ Silakan pilih setidaknya 1 file Excel!');
+          return;
+        }
+
+        if (fileInput.files.length > 3) {
+          alert('⚠️ Maksimal file yang diizinkan sekaligus adalah 3 file!');
+          return;
+        }
+
+        if (mode === 'overwrite') {
+          if (!confirm(`Peringatan: Opsi ini akan menghapus data master pada bulan yang sama di database dan menggantinya dengan isi ${fileInput.files.length} file ini. Lanjutkan?`)) {
+            return;
+          }
+        }
+
+        const formData = new FormData();
+        for (let i = 0; i < fileInput.files.length; i++) {
+          formData.append('excelFiles', fileInput.files[i]);
+        }
+        formData.append('mode', mode);
+
+        btnUpload.disabled = true;
+        btnUpload.style.backgroundColor = '#94a3b8';
+        loadingIndicator.style.display = 'flex';
+
+        try {
+          const response = await fetch('http://localhost:3000/api/upload-omset-excel', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert('✅ ' + result.message);
+            fileInput.value = '';
+            document.getElementById('selected-files-text').innerText = '';
+            resetFilter();
+          } else {
+            alert('❌ Gagal: ' + result.message);
+          }
+        } catch (err) {
+          console.error('Error:', err);
+          alert('❌ Terjadi kesalahan saat mengunggah file ke backend!');
+        } finally {
+          btnUpload.disabled = false;
+          btnUpload.style.backgroundColor = '#16a34a';
+          loadingIndicator.style.display = 'none';
+        }
+      }
+
+      window.addEventListener('DOMContentLoaded', () => { loadFilterYears(); loadTodayPreview(); });
+
+      // ==========================================
+      // LAPORAN HARIAN SALES - GENERATE, SIMPAN, PNG
+      // ==========================================
+      let lastDailyReport = null;
+
+      function dailyTodayStr() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      const dEsc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const dNum = (n) => Math.round(Number(n) || 0).toLocaleString('id-ID');
+      const dPct = (n) => (Number(n) || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+      const dCls = (n, base) => (Math.round(Number(n) || 0) < 0 ? `${base} neg` : base);
+
+      function renderDailyTable(b, meta, idx) {
+        const cls = b.divisi === 'AGPS' ? 'rpt-agps' : 'rpt-agpc';
+        const teamTxt = b.team ? ` ${b.team}` : '';
+        let h = `<table class="rpt-table ${cls}" id="rpt-tbl-${idx}">`;
+        h += `<tr><th>NAMA SALES</th><th>${dEsc(b.nama_salesman)}</th><th colspan="4">ROUTE: ${dEsc(b.nama_area || '-')}</th><th>PERCENTAGE</th></tr>`;
+        h += `<tr><th>KUNJUNGAN</th><th>TARGET 100%</th><th>OA</th><th>CUST</th><th>${dEsc(meta.omsetLabel)}</th><th>SISA</th><th>${dPct(meta.elapsedPct)}</th></tr>`;
+        b.rows.forEach(r => {
+          h += `<tr><td class="ctr">${dEsc(r.kunjungan)}</td><td class="num">${dNum(r.target)}</td><td class="num">${dNum(r.oa)}</td><td class="num">${dNum(r.cust)}</td><td class="num">${dNum(r.omset)}</td><td class="${dCls(r.sisa, 'num')}">${dNum(r.sisa)}</td><td class="num">${dPct(r.pct)}</td></tr>`;
+        });
+        const t = b.total;
+        h += `<tr class="rpt-total"><td class="ctr">TOTAL</td><td class="num">${dNum(t.target)}</td><td class="num">${dNum(t.oa)}</td><td class="num">${dNum(t.cust)}</td><td class="num">${dNum(t.omset)}</td><td class="num">${dNum(t.sisa)}</td><td class="num">${dPct(t.pct)}</td></tr>`;
+        const q = b.q;
+        h += `<tr class="rpt-q"><td class="q-label">${dEsc(q.label)}</td><td class="num">${dNum(q.target)}</td><td></td><td></td><td class="num">${dNum(q.omset)}</td><td class="${dCls(q.sisa, 'num')}">${dNum(q.sisa)}</td><td class="num">${dPct(q.pct)}</td></tr>`;
+        h += `</table>`;
+        return h;
+      }
+
+      function renderDailyReport(result) {
+        const { meta, blocks, warnings } = result;
+        document.getElementById('daily-warnings').innerHTML = (warnings || []).map(w => `<div class="daily-warning">⚠️ ${dEsc(w)}</div>`).join('');
+
+        const col = (divisi, title) => {
+          let no = 0;
+          let html = `<div class="rpt-col"><div class="rpt-col-title">${title}</div>`;
+          blocks.forEach((b, idx) => {
+            if (b.divisi !== divisi) return;
+            no++;
+            html += `<div class="rpt-card"><div class="rpt-no">${no}</div><div class="rpt-card-body">
+              <button type="button" class="btn-png" onclick="downloadOnePng(${idx})">⬇ PNG</button>
+              ${renderDailyTable(b, meta, idx)}</div></div>`;
+          });
+          if (no === 0) html += `<div style="font-size:12px;color:#94a3b8;">Tidak ada route ${divisi}.</div>`;
+          return html + `</div>`;
+        };
+
+        document.getElementById('daily-report-output').innerHTML =
+          `<div class="rpt-date-bar">INPUT TGL: ${dEsc(meta.dateLabel)}</div>` +
+          `<div class="rpt-grid">${col('AGPC', '🟩 AGPC (BJB &amp; JJB)')}${col('AGPS', '🟦 AGPS (BJB &amp; JJB)')}</div>`;
+
+        const has = blocks.length > 0;
+        document.getElementById('btn-daily-save').style.display = has ? 'inline-block' : 'none';
+        document.getElementById('btn-daily-zip').style.display = has ? 'inline-block' : 'none';
+      }
+
+      async function generateDailyReport() {
+        const date = document.getElementById('daily-report-date').value || dailyTodayStr();
+        const btn = document.getElementById('btn-daily-process');
+        btn.disabled = true;
+        btn.innerText = '⏳ Memproses...';
+        try {
+          const response = await fetch(`http://localhost:3000/api/generate-daily-report?date=${encodeURIComponent(date)}`);
+          const result = await response.json();
+          if (!result.success) {
+            alert('❌ Gagal: ' + result.message);
+            return;
+          }
+          lastDailyReport = result;
+          renderDailyReport(result);
+        } catch (err) {
+          console.error(err);
+          alert('❌ Tidak dapat terhubung ke server. Pastikan server.js sudah di-restart!');
+        } finally {
+          btn.disabled = false;
+          btn.innerText = '⚙️ Process';
+        }
+      }
+
+      async function saveDailyReport() {
+        if (!lastDailyReport || !lastDailyReport.blocks.length) return alert('⚠️ Klik Process terlebih dahulu!');
+        if (!confirm(`Simpan ${lastDailyReport.blocks.length} tabel laporan tanggal ${lastDailyReport.meta.dateLabel} ke database?\nData laporan pada tanggal yang sama akan ditimpa.`)) return;
+        const btn = document.getElementById('btn-daily-save');
+        btn.disabled = true;
+        try {
+          const response = await fetch('http://localhost:3000/api/save-daily-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ report_date: lastDailyReport.meta.date, blocks: lastDailyReport.blocks })
+          });
+          const result = await response.json();
+          alert((result.success ? '✅ ' : '❌ ') + result.message);
+        } catch (err) {
+          console.error(err);
+          alert('❌ Terjadi kesalahan saat menyimpan laporan!');
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      function dailyFileName(b) {
+        const safe = (s) => String(s || '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+        return `${b.divisi}_${b.team || 'X'}_${safe(b.nama_salesman) || 'SALES'}_${lastDailyReport.meta.date}.png`;
+      }
+
+      async function tableToPngBlob(idx) {
+        const el = document.getElementById(`rpt-tbl-${idx}`);
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+        return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      }
+
+      async function downloadOnePng(idx) {
+        if (typeof html2canvas === 'undefined') return alert('Library js/html2canvas.min.js belum dimuat!');
+        const blob = await tableToPngBlob(idx);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = dailyFileName(lastDailyReport.blocks[idx]);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }
+
+      async function downloadAllPng() {
+        if (!lastDailyReport || !lastDailyReport.blocks.length) return;
+        if (typeof html2canvas === 'undefined') return alert('Library js/html2canvas.min.js belum dimuat!');
+        if (typeof JSZip === 'undefined' || typeof saveAs === 'undefined') return alert('Library js/jszip.min.js atau js/FileSaver.min.js belum dimuat!');
+        const btn = document.getElementById('btn-daily-zip');
+        btn.disabled = true;
+        btn.innerText = '⏳ Membuat PNG...';
+        try {
+          const zip = new JSZip();
+          for (let i = 0; i < lastDailyReport.blocks.length; i++) {
+            const blob = await tableToPngBlob(i);
+            zip.file(`${String(i + 1).padStart(2, '0')}_${dailyFileName(lastDailyReport.blocks[i])}`, blob);
+          }
+          const content = await zip.generateAsync({ type: 'blob' });
+          saveAs(content, `Laporan_Harian_Sales_${lastDailyReport.meta.date}.zip`);
+        } catch (err) {
+          console.error(err);
+          alert('❌ Gagal membuat ZIP PNG: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerText = '🖼️ Download Semua PNG (ZIP)';
+        }
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('daily-report-date').value = dailyTodayStr();
+      });
+    </script>
+  </body>
+</html>

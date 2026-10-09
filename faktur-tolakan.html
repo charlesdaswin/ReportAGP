@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="id">
+  <head>
+  <script src="js/api-base.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laporan Faktur Tolakan - Anugerah Graha Plasindo</title>
+
+    <link rel="icon" type="image/png" href="LOGO-AGP-big.png" />
+    <link rel="stylesheet" href="css/style.css" />
+
+    <style>
+      .filter-card {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+      .filter-left {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .filter-group label {
+        font-size: 13px;
+        font-weight: bold;
+        color: #475569;
+      }
+      .filter-group select {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-size: 13px;
+      }
+      .btn-filter {
+        background: #0284c7;
+        color: white;
+        padding: 6px 16px;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 13px;
+        transition: 0.2s;
+      }
+      .btn-filter:hover { background: #0369a1; }
+      
+      .table-responsive { width: 100%; overflow-x: auto; }
+      .table-custom {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .table-custom th, .table-custom td {
+        border: 1px solid #cbd5e1;
+        padding: 8px 12px;
+        text-align: left;
+      }
+      .table-custom th {
+        background: #800000;
+        color: #fff;
+        text-align: center;
+        font-weight: bold;
+      }
+      .table-custom tr:nth-child(even) { background: #f8fafc; }
+
+      /* STYLING BAR PAGINASI */
+      .pagination-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        font-size: 12px;
+        color: #475569;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .pagination-buttons {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .btn-page {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        padding: 5px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+      .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+      .page-info { font-weight: bold; color: #1e293b; }
+    </style>
+  </head>
+  <body>
+    <button class="floating-toggle-btn" onclick="toggleSidebar()"><img src="LOGO-AGP-big.png" alt="Logo" /></button>
+
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display = 'none'" />
+        <h2>REPORT SYSTEM</h2>
+      </div>
+      <ul class="sidebar-menu">
+        <li>
+          <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+            <span>Target Divisi Tahunan</span>
+            <span class="arrow-icon" id="arrow-target">▶</span>
+          </a>
+          <ul class="submenu" id="submenu-target">
+            <li><a href="target-agpc.html">AGPC</a></li>
+            <li><a href="target-agps.html">AGPS</a></li>
+            <li><a href="target-agpn.html">AGP N</a></li>
+          </ul>
+        </li>
+
+        <li><a href="history-transaksi.html">History Transaksi</a></li>
+
+        <!-- SUBMENU LAPORAN HARIAN SALES -->
+        <li>
+          <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+            <span>Laporan Harian Sales</span>
+            <span class="arrow-icon" id="arrow-sales">▶</span>
+          </a>
+          <ul class="submenu" id="submenu-sales" style="display: block;">
+            <li><a href="list-sales-route.html">List Sales Route</a></li>
+            <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+            <li><a href="faktur-batal.html">Faktur Batal</a></li>
+            <li><a href="faktur-tolakan.html" class="active">Faktur Tolakan</a></li>
+          </ul>
+        </li>
+        <li><a href="target-product.html">Target Product AGPS & AGPC</a></li>
+        <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+        <li><a href="history-customer.html">History Customer</a></li>
+        <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+        <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+        <li>
+          <a href="#" onclick="handleLogout()" style="color: #ff9999; margin-top: 20px; border-top: 1px solid #990000;">🚪 Logout</a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="main-content">
+      <div class="top-bar">
+        <div class="page-title">📄 LAPORAN FAKTUR TOLAKAN</div>
+      </div>
+
+      <div class="card">
+        <!-- BARIS FILTER -->
+        <div class="filter-card">
+          <div class="filter-left">
+            <div class="filter-group">
+              <label for="filter-month">Bulan:</label>
+              <select id="filter-month">
+                <option value="1">Januari</option>
+                <option value="2">Februari</option>
+                <option value="3">Maret</option>
+                <option value="4">April</option>
+                <option value="5">Mei</option>
+                <option value="6">Juni</option>
+                <option value="7">Juli</option>
+                <option value="8">Agustus</option>
+                <option value="9">September</option>
+                <option value="10" selected>Oktober</option>
+                <option value="11">November</option>
+                <option value="12">Desember</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filter-year">Tahun:</label>
+              <select id="filter-year">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+
+            <button class="btn-filter" onclick="resetAndLoad()">🔍 Tampilkan Data</button>
+          </div>
+
+          <!-- OPSI PILIHAN JUMLAH DATA PER HALAMAN -->
+          <div class="filter-group">
+            <label for="select-limit">Tampilkan:</label>
+            <select id="select-limit" onchange="resetAndLoad()">
+              <option value="10" selected>10/hal</option>
+              <option value="25">25/hal</option>
+              <option value="50">50/hal</option>
+              <option value="100">100/hal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABEL HASIL DATA -->
+        <div class="table-responsive">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>KD Faktur</th>
+                <th>KD Tolakan</th>
+                <th>KD Customer</th>
+                <th>KD Salesman</th>
+                <th>Nama Salesman</th>
+                <th>Nama Customer</th>
+                <th>Nama Barang</th>
+                <th style="text-align: right;">Qty Tolakan</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-faktur-tolakan">
+              <tr><td colspan="8" style="text-align: center; color: #64748b;">Klik "Tampilkan Data" untuk memuat laporan.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- FOOTER PAGINASI -->
+        <div class="pagination-bar" id="pagination-container" style="display: none;">
+          <div id="page-count-info">Menampilkan 0 dari 0 data</div>
+          <div class="pagination-buttons">
+            <button class="btn-page" id="btn-prev" onclick="prevPage()">◀ Sebelumnya</button>
+            <span class="page-info" id="text-page-info">Halaman 1 / 1</span>
+            <button class="btn-page" id="btn-next" onclick="nextPage()">Selanjutnya ▶</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <script src="js/sidebar.js"></script>
+    <script>
+      if (!localStorage.getItem("agp_user_logged")) window.location.href = "index.html";
+
+      function handleLogout() {
+        if (confirm("Apakah Anda yakin ingin logout?")) {
+          localStorage.removeItem("agp_user_logged");
+          window.location.href = "index.html";
+        }
+      }
+
+      // STATE PAGINASI
+      let currentPage = 1;
+      let totalPages = 1;
+
+      function resetAndLoad() {
+        currentPage = 1;
+        loadFakturTolakan();
+      }
+
+      async function loadFakturTolakan() {
+        const month = document.getElementById('filter-month').value;
+        const year = document.getElementById('filter-year').value;
+        const limit = document.getElementById('select-limit').value;
+        const tbody = document.getElementById('tbody-faktur-tolakan');
+        const paginationContainer = document.getElementById('pagination-container');
+
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #0284c7; font-weight: bold;">⏳ Memuat data dari SQL Server...</td></tr>`;
+
+        try {
+          const res = await fetch(`http://localhost:3000/api/faktur-tolakan?month=${month}&year=${year}&page=${currentPage}&limit=${limit}`);
+          const result = await res.json();
+
+          if (result.success && result.data.length > 0) {
+            tbody.innerHTML = result.data.map(item => `
+              <tr>
+                <td style="font-weight: bold;">${item.Kd_faktur || '-'}</td>
+                <td>${item.Kd_tolakan || '-'}</td>
+                <td>${item.Kd_Customer || '-'}</td>
+                <td>${item.Kd_Salesman || '-'}</td>
+                <td><b>${item.NamaSalesman || '-'}</b></td>
+                <td><b>${item.NamaCustomer || '-'}</b></td>
+                <td>${item.NamaBarang || '-'}</td>
+                <td style="text-align: right; font-weight: bold; color: #dc2626;">${item.Qty != null ? item.Qty : 0}</td>
+              </tr>
+            `).join('');
+
+            // UPDATE STATS PAGINASI
+            totalPages = result.pagination.totalPages;
+            const startNo = (currentPage - 1) * limit + 1;
+            const endNo = Math.min(currentPage * limit, result.pagination.totalRows);
+
+            document.getElementById('page-count-info').innerText = `Menampilkan ${startNo} - ${endNo} dari total ${result.pagination.totalRows} data`;
+            document.getElementById('text-page-info').innerText = `Halaman ${currentPage} / ${totalPages}`;
+
+            document.getElementById('btn-prev').disabled = (currentPage === 1);
+            document.getElementById('btn-next').disabled = (currentPage === totalPages);
+
+            paginationContainer.style.display = 'flex';
+          } else {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8;">Tidak ada data Faktur Tolakan pada periode bulan ini.</td></tr>`;
+            paginationContainer.style.display = 'none';
+          }
+        } catch (err) {
+          console.error(err);
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #ef4444;">Gagal mengambil data dari server database.</td></tr>`;
+          paginationContainer.style.display = 'none';
+        }
+      }
+
+      function prevPage() {
+        if (currentPage > 1) {
+          currentPage--;
+          loadFakturTolakan();
+        }
+      }
+
+      function nextPage() {
+        if (currentPage < totalPages) {
+          currentPage++;
+          loadFakturTolakan();
+        }
+      }
+
+      window.addEventListener('DOMContentLoaded', loadFakturTolakan);
+    </script>
+  </body>
+</html>

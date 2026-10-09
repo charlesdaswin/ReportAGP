@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="../js/api-base.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Target Product AGPC & AGPS - Anugerah Graha Plasindo</title>
+  <link rel="icon" type="image/png" href="LOGO-AGP-big.png">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script src="js/xlsx.full.min.js"></script>
+  <script src="js/html2canvas.min.js"></script>
+  <script src="js/jszip.min.js"></script>
+  <script src="js/FileSaver.min.js"></script>
+
+  <style>
+    .toolbar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+    .tool-item { display: flex; flex-direction: column; gap: 4px; }
+    .tool-item label { font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: .3px; }
+    .tool-item select, .tool-item input {
+      padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; background: #fff;
+    }
+    .btn-tp { border: none; color: #fff; padding: 8px 15px; border-radius: 5px; font-weight: bold;
+              font-size: 13px; cursor: pointer; transition: .15s; white-space: nowrap; }
+    .btn-tp:disabled { background: #94a3b8 !important; cursor: not-allowed; }
+    .btn-import { background: #0284c7; }  .btn-import:hover { background: #0369a1; }
+    .btn-simpan { background: #16a34a; }  .btn-simpan:hover { background: #15803d; }
+    .btn-muat   { background: #7c3aed; }  .btn-muat:hover   { background: #6d28d9; }
+    .btn-excel  { background: #15803d; }
+    .btn-png    { background: #475569; }
+    .btn-reset  { background: #64748b; }
+
+    .tabs { display: flex; gap: 4px; border-bottom: 2px solid #e2e8f0; margin: 18px 0 0; }
+    .tab { padding: 9px 18px; font-size: 13px; font-weight: bold; color: #64748b; cursor: pointer;
+           border: none; background: none; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tab.active { color: #800000; border-bottom-color: #800000; }
+
+    .table-wrap { overflow: auto; max-height: 72vh; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 12px; background: #fff; }
+    table.tp { border-collapse: separate; border-spacing: 0; font-size: 11.5px; width: max-content; min-width: 100%; }
+    table.tp th, table.tp td { border-right: 1px solid #d7dee8; border-bottom: 1px solid #d7dee8; padding: 4px 6px; white-space: nowrap; }
+    table.tp thead th { position: sticky; background: #f1f5f9; color: #1e293b; text-align: center; font-weight: bold; z-index: 3; }
+    table.tp thead tr:nth-child(1) th { top: 0; height: 28px; }
+    table.tp thead tr:nth-child(2) th { top: 28px; }
+    th.area-head { background: #800000 !important; color: #fff !important; letter-spacing: .3px; }
+    th.col-produk, td.col-produk {
+      position: sticky; left: 0; background: #fff; z-index: 2; text-align: left;
+      min-width: 240px; max-width: 240px; overflow: hidden; text-overflow: ellipsis;
+      border-right: 2px solid #94a3b8;
+    }
+    thead th.col-produk { background: #f1f5f9; z-index: 4; }
+    tbody tr:nth-child(even) td { background: #fafbfc; }
+    tbody tr:nth-child(even) td.col-produk { background: #fafbfc; }
+    tbody tr:hover td { background: #fff7ed; }
+    tbody tr:hover td.col-produk { background: #fff7ed; }
+
+    table.tp input.sel {
+      width: 54px; padding: 3px 4px; border: 1px solid transparent; background: transparent;
+      font-size: 11.5px; text-align: right; border-radius: 3px; font-family: inherit;
+    }
+    table.tp input.sel:hover { border-color: #cbd5e1; }
+    table.tp input.sel:focus { border-color: #0284c7; background: #eff6ff; outline: none; }
+    td.c-ave { background: #f1f5f9 !important; color: #475569; text-align: right; font-style: italic; }
+    td.c-tgt input.sel { background: #fffbeb; border-color: #fde68a; font-weight: bold; color: #92400e; }
+    td.c-total { background: #fef3c7 !important; font-weight: bold; text-align: right; color: #78350f; }
+    td.num { text-align: right; }
+
+    .info-strip { background: #eff6ff; border-left: 4px solid #0284c7; padding: 9px 13px; font-size: 12.5px;
+                  color: #1e3a5f; border-radius: 4px; line-height: 1.6; margin-bottom: 12px; }
+    .status-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+                  gap: 10px; font-size: 12px; color: #475569; margin-top: 10px; }
+    .pager { display: flex; gap: 5px; align-items: center; }
+    .pager button { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px;
+                    border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .pager button:disabled { opacity: .45; cursor: not-allowed; }
+    .spinner { display: none; align-items: center; gap: 8px; color: #0284c7; font-weight: bold; font-size: 13px; margin-top: 10px; }
+    .chip { background: #e0f2fe; color: #0369a1; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <button class="floating-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+    <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='AGP';">
+  </button>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display='none';">
+      <h2>REPORT SYSTEM</h2>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+          <span>Target Divisi Tahunan</span><span class="arrow-icon" id="arrow-target">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-target">
+          <li><a href="target-agpc.html">AGPC</a></li>
+          <li><a href="target-agps.html">AGPS</a></li>
+          <li><a href="target-agpn.html">AGP N</a></li>
+        </ul>
+      </li>
+      <!-- <li><a href="target-product.html" class="active">Target Product</a></li> -->
+      <li><a href="history-transaksi.html">History Transaksi</a></li>
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+          <span>Laporan Harian Sales</span><span class="arrow-icon" id="arrow-sales">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-sales">
+          <li><a href="list-sales-route.html">List Sales Route</a></li>
+          <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+          <li><a href="faktur-batal.html">Faktur Batal</a></li>
+          <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+        </ul>
+      </li>
+      <li><a href="target-product.html">Target Product AGPS & AGPC</a></li>
+      <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+      <li><a href="history-customer.html">History Customer</a></li>
+      <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+      <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+      <li><a href="#" onclick="handleLogout()" style="color:#ff9999; margin-top:20px; border-top:1px solid #990000;">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div class="page-title">TARGET PRODUCT AGPC &amp; AGPS</div>
+    </div>
+
+    <div class="card">
+      <div class="info-strip">
+        Isi realisasi <b>3 bulan terakhir</b> per area. Kolom <b>AVE</b> dihitung otomatis (rata-rata 3 bulan),
+        kolom <b>TGT</b> diisi manual dan awalnya mengikuti AVE. Kolom <b>TOTAL</b> adalah penjumlahan TGT seluruh area.
+        <br>Daripada mengetik satu per satu, pakai <b>Import dari Excel</b> memakai file yang formatnya sama dengan AGPC_BJB.xlsx atau AGPS_BJB.xlsx.
+      </div>
+
+      <div class="toolbar">
+        <div class="tool-item">
+          <label>Divisi</label>
+          <select id="f-divisi" onchange="gantiKonteks()">
+            <option value="AGPC">AGPC</option>
+            <option value="AGPS">AGPS</option>
+          </select>
+        </div>
+        <div class="tool-item">
+          <label>Team</label>
+          <select id="f-team" onchange="gantiKonteks()">
+            <option value="BJB">BJB</option>
+            <option value="JJB">JJB</option>
+          </select>
+        </div>
+        <div class="tool-item">
+          <label>Tahun</label>
+          <input type="number" id="f-tahun" value="2026" style="width:90px" onchange="tandaiBerubah()">
+        </div>
+        <div class="tool-item">
+          <label>Bulan 1</label>
+          <input type="text" id="f-b1" value="Apr" style="width:70px" onchange="renderTabel()">
+        </div>
+        <div class="tool-item">
+          <label>Bulan 2</label>
+          <input type="text" id="f-b2" value="Mei" style="width:70px" onchange="renderTabel()">
+        </div>
+        <div class="tool-item">
+          <label>Bulan 3</label>
+          <input type="text" id="f-b3" value="Jun" style="width:70px" onchange="renderTabel()">
+        </div>
+
+        <input type="file" id="f-excel" accept=".xlsx,.xls" class="hidden" onchange="importExcel(this)">
+        <button class="btn-tp btn-import" onclick="document.getElementById('f-excel').click()">📥 Import dari Excel</button>
+        <button class="btn-tp btn-muat" onclick="muatDariDatabase()">📂 Muat dari Database</button>
+        <button class="btn-tp btn-simpan" id="btn-simpan" onclick="simpanKeDatabase()">💾 Simpan ke Database</button>
+        <button class="btn-tp btn-excel" onclick="exportExcel()">📊 Export Excel</button>
+        <button class="btn-tp btn-reset" onclick="resetTabel()">↺ Kosongkan</button>
+      </div>
+
+      <div class="spinner" id="spinner"><span>⏳ Sedang memproses, harap tunggu...</span></div>
+
+      <div class="tabs">
+        <button class="tab active" id="tab-detail" onclick="pilihTab('detail')">Detail per Area</button>
+        <button class="tab" id="tab-summary" onclick="pilihTab('summary')">Summary (BJB + JJB)</button>
+      </div>
+
+      <!-- ===== TAB DETAIL ===== -->
+      <div id="panel-detail">
+        <div class="status-bar" style="margin-top:12px;">
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="f-cari" placeholder="🔍 Cari nama produk..." oninput="cariProduk()"
+                   style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:5px; font-size:13px; width:260px;">
+            <button class="btn-tp btn-import" style="padding:6px 12px;" onclick="tambahProduk()">➕ Tambah Produk</button>
+            <span class="chip" id="chip-konteks">AGPC · BJB</span>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <select id="f-perhal" onchange="halaman=1; renderTabel()" style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px;">
+              <option value="50">50 produk/hal</option>
+              <option value="100">100 produk/hal</option>
+              <option value="250">250 produk/hal</option>
+              <option value="99999">Tampilkan semua</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap" id="wrap-detail">
+          <table class="tp" id="tabel-detail">
+            <thead id="thead-detail"></thead>
+            <tbody id="tbody-detail"></tbody>
+          </table>
+        </div>
+
+        <div class="status-bar">
+          <div id="info-jumlah">Belum ada data.</div>
+          <div class="pager">
+            <button onclick="gantiHalaman(-1)" id="btn-prev">◀ Sebelumnya</button>
+            <span id="info-halaman" style="font-weight:bold;">Hal 1 / 1</span>
+            <button onclick="gantiHalaman(1)" id="btn-next">Selanjutnya ▶</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB SUMMARY ===== -->
+      <div id="panel-summary" class="hidden">
+        <div class="info-strip" style="margin-top:12px;">
+          Ringkasan gabungan BJB dan JJB untuk divisi yang dipilih. Data diambil dari database,
+          jadi pastikan kedua team sudah disimpan lebih dulu.
+          <button class="btn-tp btn-muat" style="padding:5px 12px; margin-left:8px;" onclick="muatSummary()">🔄 Muat Ulang Summary</button>
+        </div>
+        <div class="table-wrap" id="wrap-summary">
+          <table class="tp" id="tabel-summary">
+            <thead id="thead-summary"></thead>
+            <tbody id="tbody-summary"></tbody>
+          </table>
+        </div>
+        <div class="status-bar"><div id="info-summary">Belum dimuat.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/sidebar.js"></script>
+  <script>
+    if (!localStorage.getItem('agp_user_logged')) window.location.href = 'index.html';
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('agp_user_logged');
+        window.location.href = 'index.html';
+      }
+    }
+
+    const API = 'http://localhost:3000';
+
+    // Area bawaan per divisi + team. Bisa bertambah otomatis saat import Excel.
+    const AREA_DEFAULT = {
+      'AGPC|BJB': ['BANTEN-BKS', 'BEKASI', 'BOGOR', 'TKAB-KRW', 'TSEL-SUB'],
+      'AGPC|JJB': ['DPK-SKB', 'JAK-BP', 'JAKSEL', 'JAKTIM-CKR', 'JAKUT-PWK'],
+      'AGPS|BJB': ['BANTEN-BKS', 'BEKASI', 'BOGOR', 'TKAB-KRW', 'TSEL-SUB'],
+      'AGPS|JJB': ['DPK-SKB', 'JAK-BP', 'JAKSEL', 'JAKTIM-CKR', 'JAKUT-PWK']
+    };
+
+    let areas = [];          // ['BANTEN-BKS', ...]
+    let produk = [];         // [{ nama, nilai: { area: {m1,m2,m3,tgt} } }]
+    let halaman = 1;
+    let kataCari = '';
+    let adaPerubahan = false;
+
+    const divisi = () => document.getElementById('f-divisi').value;
+    const team   = () => document.getElementById('f-team').value;
+    const tahun  = () => document.getElementById('f-tahun').value;
+    const bulan  = () => [document.getElementById('f-b1').value,
+                          document.getElementById('f-b2').value,
+                          document.getElementById('f-b3').value];
+    const periode = () => `${bulan().join('-')} ${tahun()}`;
+    const perHal = () => parseInt(document.getElementById('f-perhal').value);
+
+    const angka = (v) => {
+      const n = parseFloat(v);
+      return isNaN(n) ? 0 : n;
+    };
+    const fmt = (v) => {
+      const n = angka(v);
+      if (n === 0) return '0';
+      return Number.isInteger(n) ? String(n) : n.toFixed(2);
+    };
+    const esc = (s) => String(s == null ? '' : s)
+      .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    function selArea() { return AREA_DEFAULT[`${divisi()}|${team()}`] || []; }
+
+    function sel(nama) {
+      let p = produk.find(x => x.nama === nama);
+      if (!p) { p = { nama, nilai: {} }; produk.push(p); }
+      return p;
+    }
+    function selNilai(p, area) {
+      if (!p.nilai[area]) p.nilai[area] = { m1: 0, m2: 0, m3: 0, tgt: 0 };
+      return p.nilai[area];
+    }
+    const rata = (v) => (angka(v.m1) + angka(v.m2) + angka(v.m3)) / 3;
+    const totalTgt = (p) => areas.reduce((a, ar) => a + angka(selNilai(p, ar).tgt), 0);
+
+    function tandaiBerubah() { adaPerubahan = true; }
+
+    function gantiKonteks() {
+      if (adaPerubahan && !confirm('Ada perubahan yang belum disimpan. Lanjut ganti Divisi/Team? Perubahan akan hilang.')) {
+        return;
+      }
+      areas = selArea().slice();
+      produk = [];
+      adaPerubahan = false;
+      halaman = 1;
+      document.getElementById('chip-konteks').innerText = `${divisi()} · ${team()}`;
+      renderTabel();
+    }
+
+    function produkTersaring() {
+      if (!kataCari) return produk;
+      const k = kataCari.toLowerCase();
+      return produk.filter(p => p.nama.toLowerCase().includes(k));
+    }
+
+    function cariProduk() {
+      kataCari = document.getElementById('f-cari').value.trim();
+      halaman = 1;
+      renderTabel();
+    }
+
+    function gantiHalaman(arah) {
+      const total = Math.max(1, Math.ceil(produkTersaring().length / perHal()));
+      halaman = Math.min(total, Math.max(1, halaman + arah));
+      renderTabel();
+      document.getElementById('wrap-detail').scrollTop = 0;
+    }
+
+    function renderTabel() {
+      const [b1, b2, b3] = bulan();
+      const thead = document.getElementById('thead-detail');
+      const tbody = document.getElementById('tbody-detail');
+
+      if (areas.length === 0) areas = selArea().slice();
+
+      // --- Header ---
+      let h1 = `<tr><th class="col-produk" rowspan="2">PRODUK</th>`;
+      areas.forEach(a => { h1 += `<th class="area-head" colspan="5">${divisi()} : ${esc(a)}</th>`; });
+      h1 += `<th class="area-head" rowspan="2" style="min-width:70px;">TOTAL</th></tr>`;
+
+      let h2 = `<tr>`;
+      areas.forEach(() => {
+        h2 += `<th>${esc(b1)}</th><th>${esc(b2)}</th><th>${esc(b3)}</th><th>AVE</th><th>TGT</th>`;
+      });
+      h2 += `</tr>`;
+      thead.innerHTML = h1 + h2;
+
+      // --- Body ---
+      const daftar = produkTersaring();
+      const totalHal = Math.max(1, Math.ceil(daftar.length / perHal()));
+      if (halaman > totalHal) halaman = totalHal;
+      const mulai = (halaman - 1) * perHal();
+      const tampil = daftar.slice(mulai, mulai + perHal());
+
+      if (tampil.length === 0) {
+        tbody.innerHTML = `<tr><td class="col-produk" colspan="${areas.length * 5 + 2}"
+          style="text-align:center; color:#94a3b8; padding:28px;">
+          Belum ada produk. Pakai <b>Import dari Excel</b>, <b>Muat dari Database</b>, atau <b>Tambah Produk</b>.
+          </td></tr>`;
+      } else {
+        tbody.innerHTML = tampil.map(p => {
+          const idx = produk.indexOf(p);
+          let tr = `<tr><td class="col-produk" title="${esc(p.nama)}">${esc(p.nama)}</td>`;
+          areas.forEach(a => {
+            const v = selNilai(p, a);
+            const inp = (f) => `<input class="sel" type="number" step="any" value="${v[f] || ''}"
+                                 oninput="ubahNilai(${idx}, '${esc(a)}', '${f}', this.value)">`;
+            tr += `<td class="num">${inp('m1')}</td>`;
+            tr += `<td class="num">${inp('m2')}</td>`;
+            tr += `<td class="num">${inp('m3')}</td>`;
+            tr += `<td class="c-ave" id="ave-${idx}-${esc(a)}">${fmt(rata(v))}</td>`;
+            tr += `<td class="c-tgt">${inp('tgt')}</td>`;
+          });
+          tr += `<td class="c-total" id="tot-${idx}">${fmt(totalTgt(p))}</td></tr>`;
+          return tr;
+        }).join('');
+      }
+
+      document.getElementById('info-jumlah').innerText =
+        `${daftar.length} produk${kataCari ? ` (hasil pencarian dari ${produk.length})` : ''} · ${areas.length} area`;
+      document.getElementById('info-halaman').innerText = `Hal ${halaman} / ${totalHal}`;
+      document.getElementById('btn-prev').disabled = halaman <= 1;
+      document.getElementById('btn-next').disabled = halaman >= totalHal;
+    }
+
+    function ubahNilai(idx, area, field, nilai) {
+      const p = produk[idx];
+      if (!p) return;
+      const v = selNilai(p, area);
+      v[field] = angka(nilai);
+      adaPerubahan = true;
+
+      if (field !== 'tgt') {
+        const elAve = document.getElementById(`ave-${idx}-${area}`);
+        if (elAve) elAve.innerText = fmt(rata(v));
+      }
+      const elTot = document.getElementById(`tot-${idx}`);
+      if (elTot) elTot.innerText = fmt(totalTgt(p));
+    }
+
+    function tambahProduk() {
+      const nama = prompt('Nama produk baru:');
+      if (!nama || !nama.trim()) return;
+      const bersih = nama.trim().toUpperCase();
+      if (produk.some(p => p.nama === bersih)) return alert('Produk itu sudah ada di daftar.');
+      produk.unshift({ nama: bersih, nilai: {} });
+      adaPerubahan = true;
+      halaman = 1;
+      renderTabel();
+    }
+
+    function resetTabel() {
+      if (!confirm('Kosongkan seluruh isi tabel di layar? Data di database tidak terhapus.')) return;
+      produk = [];
+      adaPerubahan = false;
+      renderTabel();
+    }
+
+    // ================= IMPORT EXCEL =================
+    function importExcel(input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (typeof XLSX === 'undefined') return alert('Library js/xlsx.full.min.js belum dimuat!');
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+
+          // Cari baris header: baris yang kolom pertamanya PRODUK
+          let iHead = -1;
+          for (let i = 0; i < Math.min(rows.length, 12); i++) {
+            if (String((rows[i] || [])[0] || '').trim().toUpperCase() === 'PRODUK') { iHead = i; break; }
+          }
+          if (iHead < 1) throw new Error('Baris header "PRODUK" tidak ditemukan. Pastikan formatnya sama dengan file AGPC_BJB.xlsx.');
+
+          const barisArea = rows[iHead - 1] || [];
+          const barisKolom = rows[iHead] || [];
+
+          // Petakan kolom -> { area, field }
+          const petaKolom = [];
+          const areaBaru = [];
+          let areaAktif = null;
+          for (let c = 1; c < barisKolom.length; c++) {
+            const labelArea = String(barisArea[c] || '').trim();
+            if (labelArea) {
+              areaAktif = labelArea.toUpperCase() === 'TOTAL'
+                ? null
+                : labelArea.replace(/^\s*(AGPC|AGPS)\s*:\s*/i, '').trim();
+              if (areaAktif && !areaBaru.includes(areaAktif)) areaBaru.push(areaAktif);
+            }
+            const labelKolom = String(barisKolom[c] || '').trim().toUpperCase();
+            if (!areaAktif || !labelKolom) continue;
+            if (labelKolom === 'AVE') continue;             // AVE dihitung ulang
+            if (labelKolom === 'TGT') petaKolom.push({ c, area: areaAktif, field: 'tgt' });
+            else petaKolom.push({ c, area: areaAktif, field: null, urut: null });
+          }
+
+          // Untuk kolom bulan, urutkan per area supaya jadi m1, m2, m3
+          const hitungPerArea = {};
+          petaKolom.forEach(k => {
+            if (k.field === 'tgt') return;
+            hitungPerArea[k.area] = (hitungPerArea[k.area] || 0) + 1;
+            k.field = 'm' + hitungPerArea[k.area];
+          });
+
+          if (areaBaru.length === 0) throw new Error('Nama area tidak terbaca pada baris di atas header PRODUK.');
+
+          // Label bulan dari file
+          const labelBulan = [];
+          for (const k of petaKolom) {
+            if (k.area === areaBaru[0] && k.field !== 'tgt') {
+              labelBulan.push(String(barisKolom[k.c] || '').trim());
+            }
+          }
+          if (labelBulan[0]) document.getElementById('f-b1').value = labelBulan[0];
+          if (labelBulan[1]) document.getElementById('f-b2').value = labelBulan[1];
+          if (labelBulan[2]) document.getElementById('f-b3').value = labelBulan[2];
+
+          // Baca isi
+          areas = areaBaru;
+          produk = [];
+          let jml = 0;
+          for (let r = iHead + 1; r < rows.length; r++) {
+            const baris = rows[r] || [];
+            const nama = String(baris[0] || '').trim();
+            if (!nama || nama.toUpperCase() === 'TOTAL') continue;
+
+            const p = { nama: nama.toUpperCase(), nilai: {} };
+            petaKolom.forEach(k => {
+              const v = selNilai(p, k.area);
+              v[k.field] = angka(baris[k.c]);
+            });
+            produk.push(p);
+            jml++;
+          }
+
+          adaPerubahan = true;
+          halaman = 1;
+          kataCari = '';
+          document.getElementById('f-cari').value = '';
+          renderTabel();
+          alert(`✅ Berhasil membaca ${jml} produk dan ${areas.length} area dari file Excel.\n\nPeriksa dulu isinya, lalu klik Simpan ke Database.`);
+        } catch (err) {
+          console.error(err);
+          alert('❌ Gagal membaca file Excel: ' + err.message);
+        } finally {
+          input.value = '';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ================= DATABASE =================
+    function tampilSpinner(tampil) {
+      document.getElementById('spinner').style.display = tampil ? 'flex' : 'none';
+    }
+
+    async function simpanKeDatabase() {
+      if (produk.length === 0) return alert('⚠️ Belum ada data untuk disimpan.');
+
+      const [b1, b2, b3] = bulan();
+      const items = [];
+      produk.forEach(p => {
+        areas.forEach(a => {
+          const v = selNilai(p, a);
+          if (!angka(v.m1) && !angka(v.m2) && !angka(v.m3) && !angka(v.tgt)) return;  // lewati yang kosong semua
+          items.push({
+            nama_produk: p.nama, nama_area: a,
+            m1: angka(v.m1), m2: angka(v.m2), m3: angka(v.m3),
+            ave: rata(v), tgt: angka(v.tgt)
+          });
+        });
+      });
+
+      if (items.length === 0) return alert('⚠️ Semua nilai masih kosong, tidak ada yang perlu disimpan.');
+      if (!confirm(`Simpan ${items.length} baris untuk ${divisi()} ${team()} periode ${periode()}?\n\nData periode yang sama akan ditimpa.`)) return;
+
+      const btn = document.getElementById('btn-simpan');
+      btn.disabled = true; tampilSpinner(true);
+      try {
+        const res = await fetch(`${API}/api/target-product`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            divisi: divisi(), team: team(), tahun: parseInt(tahun()), periode: periode(),
+            bulan_1: b1, bulan_2: b2, bulan_3: b3, areas, items
+          })
+        });
+        const hasil = await res.json();
+        alert((hasil.success ? '✅ ' : '❌ ') + hasil.message);
+        if (hasil.success) adaPerubahan = false;
+      } catch (err) {
+        console.error(err);
+        alert('❌ Tidak dapat terhubung ke server. Pastikan server.js sudah berjalan dan versinya terbaru.');
+      } finally {
+        btn.disabled = false; tampilSpinner(false);
+      }
+    }
+
+    async function muatDariDatabase() {
+      if (adaPerubahan && !confirm('Ada perubahan yang belum disimpan. Muat ulang dari database dan buang perubahan?')) return;
+
+      tampilSpinner(true);
+      try {
+        const url = `${API}/api/target-product?divisi=${divisi()}&team=${team()}&periode=${encodeURIComponent(periode())}`;
+        const res = await fetch(url);
+        const hasil = await res.json();
+
+        if (!hasil.success) { alert('❌ ' + hasil.message); return; }
+        if (!hasil.items || hasil.items.length === 0) {
+          alert(`Belum ada data tersimpan untuk ${divisi()} ${team()} periode ${periode()}.`);
+          return;
+        }
+
+        if (hasil.bulan_1) document.getElementById('f-b1').value = hasil.bulan_1;
+        if (hasil.bulan_2) document.getElementById('f-b2').value = hasil.bulan_2;
+        if (hasil.bulan_3) document.getElementById('f-b3').value = hasil.bulan_3;
+
+        areas = (hasil.areas && hasil.areas.length) ? hasil.areas : selArea().slice();
+        produk = [];
+        hasil.items.forEach(it => {
+          const p = sel(it.nama_produk);
+          const v = selNilai(p, it.nama_area);
+          v.m1 = angka(it.m1); v.m2 = angka(it.m2); v.m3 = angka(it.m3); v.tgt = angka(it.tgt);
+        });
+
+        adaPerubahan = false;
+        halaman = 1;
+        renderTabel();
+        alert(`✅ Berhasil memuat ${produk.length} produk dari database.`);
+      } catch (err) {
+        console.error(err);
+        alert('❌ Tidak dapat terhubung ke server.');
+      } finally {
+        tampilSpinner(false);
+      }
+    }
+
+    // ================= SUMMARY =================
+    function pilihTab(nama) {
+      const detail = nama === 'detail';
+      document.getElementById('panel-detail').classList.toggle('hidden', !detail);
+      document.getElementById('panel-summary').classList.toggle('hidden', detail);
+      document.getElementById('tab-detail').classList.toggle('active', detail);
+      document.getElementById('tab-summary').classList.toggle('active', !detail);
+      if (!detail) muatSummary();
+    }
+
+    async function muatSummary() {
+      const tbody = document.getElementById('tbody-summary');
+      const thead = document.getElementById('thead-summary');
+      thead.innerHTML = `
+        <tr>
+          <th class="col-produk" rowspan="2">PRODUK</th>
+          <th class="area-head" colspan="3">BJB</th>
+          <th class="area-head" colspan="3">JJB</th>
+          <th class="area-head" colspan="3">${divisi()}</th>
+        </tr>
+        <tr>
+          <th>TOTAL</th><th>AVE</th><th>TGT</th>
+          <th>TOTAL</th><th>AVE</th><th>TGT</th>
+          <th>TOTAL</th><th>AVE</th><th>TGT</th>
+        </tr>`;
+      tbody.innerHTML = `<tr><td class="col-produk" colspan="10" style="text-align:center; padding:20px;">Memuat...</td></tr>`;
+
+      try {
+        const ambil = async (tm) => {
+          const url = `${API}/api/target-product?divisi=${divisi()}&team=${tm}&periode=${encodeURIComponent(periode())}`;
+          const r = await fetch(url);
+          const j = await r.json();
+          return (j.success && j.items) ? j.items : [];
+        };
+
+        const [itemBjb, itemJjb] = await Promise.all([ambil('BJB'), ambil('JJB')]);
+        if (itemBjb.length === 0 && itemJjb.length === 0) {
+          tbody.innerHTML = `<tr><td class="col-produk" colspan="10" style="text-align:center; color:#94a3b8; padding:24px;">
+            Belum ada data tersimpan untuk periode ${esc(periode())}.</td></tr>`;
+          document.getElementById('info-summary').innerText = 'Belum ada data.';
+          return;
+        }
+
+        const gab = new Map();
+        const kumpul = (items, tm) => items.forEach(it => {
+          if (!gab.has(it.nama_produk)) {
+            gab.set(it.nama_produk, { BJB: { total: 0, ave: 0, tgt: 0 }, JJB: { total: 0, ave: 0, tgt: 0 } });
+          }
+          const g = gab.get(it.nama_produk)[tm];
+          g.total += angka(it.m1) + angka(it.m2) + angka(it.m3);
+          g.ave += angka(it.ave);
+          g.tgt += angka(it.tgt);
+        });
+        kumpul(itemBjb, 'BJB');
+        kumpul(itemJjb, 'JJB');
+
+        const urut = Array.from(gab.keys()).sort();
+        tbody.innerHTML = urut.map(nama => {
+          const g = gab.get(nama);
+          const t = {
+            total: g.BJB.total + g.JJB.total,
+            ave: g.BJB.ave + g.JJB.ave,
+            tgt: g.BJB.tgt + g.JJB.tgt
+          };
+          const sel3 = (x, kelas) => `<td class="${kelas}">${fmt(x.total)}</td><td class="${kelas}">${fmt(x.ave)}</td><td class="${kelas}">${fmt(x.tgt)}</td>`;
+          return `<tr><td class="col-produk" title="${esc(nama)}">${esc(nama)}</td>
+                  ${sel3(g.BJB, 'num')}${sel3(g.JJB, 'num')}${sel3(t, 'c-total')}</tr>`;
+        }).join('');
+
+        document.getElementById('info-summary').innerText =
+          `${urut.length} produk · periode ${periode()} · BJB ${itemBjb.length} baris, JJB ${itemJjb.length} baris`;
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td class="col-produk" colspan="10" style="text-align:center; color:#ef4444; padding:20px;">Gagal memuat summary.</td></tr>`;
+      }
+    }
+
+    // ================= EXPORT =================
+    function exportExcel() {
+      const tabel = document.getElementById('panel-summary').classList.contains('hidden')
+        ? document.getElementById('tabel-detail')
+        : document.getElementById('tabel-summary');
+
+      if (!tabel.querySelector('tbody tr td input') && !tabel.querySelector('tbody tr')) {
+        return alert('Belum ada data untuk di-export.');
+      }
+
+      // Ganti input dengan nilainya supaya terbaca Excel
+      const salinan = tabel.cloneNode(true);
+      salinan.querySelectorAll('input').forEach(inp => {
+        const td = document.createElement('span');
+        td.textContent = inp.value || '0';
+        inp.replaceWith(td);
+      });
+
+      const html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8"><style>
+          table { border-collapse: collapse; }
+          th, td { border: 1px solid #000; padding: 4px 6px; font-family: Calibri; font-size: 10pt; text-align: right; }
+          th { background: #f1f5f9; font-weight: bold; text-align: center; }
+          .area-head { background: #ffe6e6; color: #800000; }
+          .col-produk { text-align: left; }
+        </style></head>
+        <body>${salinan.outerHTML}</body></html>`;
+
+      const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Target_Product_${divisi()}_${team()}_${periode().replace(/\s+/g, '_')}.xls`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+
+    window.addEventListener('beforeunload', (e) => {
+      if (adaPerubahan) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    window.onload = function () {
+      const sub = document.getElementById('submenu-target');
+      areas = selArea().slice();
+      document.getElementById('chip-konteks').innerText = `${divisi()} · ${team()}`;
+      renderTabel();
+    };
+  </script>
+</body>
+</html>

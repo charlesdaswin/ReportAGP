@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="js/api-base.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List Sales Route - Anugerah Graha Plasindo</title>
+  <link rel="icon" type="image/png" href="LOGO-AGP-big.png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; }
+    .table-route { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
+    .table-route th, .table-route td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+    .table-route th { background: #800000; color: #fff; text-align: center; font-weight: bold; }
+    .table-route tr:nth-child(even) { background: #f8fafc; }
+    .btn-edit-icon {
+      background: #f59e0b; color: white; border: none; padding: 6px 10px;
+      border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.2s;
+    }
+    .btn-edit-icon:hover { background: #d97706; }
+    
+    /* MODAL POPUP EDIT */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+      z-index: 10000; visibility: hidden; opacity: 0; transition: all 0.3s ease;
+      padding: 20px; box-sizing: border-box;
+    }
+    .modal-overlay.active { visibility: visible; opacity: 1; }
+    .modal-card {
+      background: white; padding: 25px; border-radius: 8px; width: 500px;
+      max-width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid #f59e0b;
+      /* Isi yang kepanjangan bisa di-scroll, tidak terpotong layar */
+      max-height: calc(100vh - 40px); overflow-y: auto; box-sizing: border-box;
+    }
+    .modal-card h3 { color: #800000; margin-bottom: 15px; font-size: 16px; border: none; }
+    .modal-card .form-group { margin-bottom: 12px; }
+    .modal-card label { display: block; font-size: 12px; color: #475569; margin-bottom: 4px; font-weight: bold; }
+    .modal-card input, .modal-card select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; }
+    /* Tombol Batal / Simpan tetap menempel di bawah walau isinya di-scroll */
+    .modal-actions {
+      display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;
+      position: sticky; bottom: -25px; background: #fff;
+      margin-left: -25px; margin-right: -25px; margin-bottom: -25px;
+      padding: 12px 25px; border-top: 1px solid #e2e8f0;
+    }
+    .btn-cancel { background: #64748b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+    .btn-simpan { background: #16a34a; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-ganti-sales { background: #0284c7; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .btn-ganti-sales:hover { background: #0369a1; }
+    .btn-pindah { background: #7c3aed; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .btn-pindah:hover { background: #6d28d9; }
+    .alur { background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; padding:11px 13px; font-size:12.5px; line-height:1.9; margin-bottom:14px; }
+    .alur .baris { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .alur .tag { font-family: ui-monospace, Consolas, monospace; background:#f1f5f9; padding:2px 7px; border-radius:4px; }
+    .alur .dari { color:#b91c1c; text-decoration:line-through; }
+    .alur .ke   { color:#15803d; font-weight:bold; }
+    .badge-aktif { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+    .badge-nonaktif { background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+    .row-nonaktif { opacity: 0.6; }
+    .info-box { background: #eff6ff; border-left: 4px solid #0284c7; padding: 10px 14px; font-size: 12.5px; color: #1e3a5f; border-radius: 4px; margin-bottom: 12px; line-height: 1.6; }
+    .filter-bar-route { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; font-size: 13px; }
+
+    /* ===== KOTAK PENCARIAN ===== */
+    .cari-box { padding: 7px 11px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; width: 300px; }
+    .cari-box:focus { outline: none; border-color: #0284c7; background: #f8fbff; }
+    mark { background: #fde68a; padding: 0 2px; border-radius: 2px; }
+
+    /* ===== TAB ===== */
+    .tabs-lsr { display: flex; gap: 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 4px; }
+    .tab-lsr { padding: 10px 20px; font-size: 13.5px; font-weight: bold; color: #64748b; cursor: pointer;
+               border: none; background: none; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tab-lsr.active { color: #800000; border-bottom-color: #800000; }
+    .tab-lsr .hit { background: #e0f2fe; color: #0369a1; padding: 1px 8px; border-radius: 9px; font-size: 11px; margin-left: 5px; }
+
+    /* ===== PANEL SINKRON ===== */
+    .sync-bar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;
+                background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px; margin-bottom: 12px; }
+    .sync-bar .grp { display: flex; flex-direction: column; gap: 4px; }
+    .sync-bar label { font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: .3px; }
+    .sync-bar input[type=date] { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; }
+    .btn-s { border: none; color: #fff; padding: 9px 15px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; white-space: nowrap; }
+    .btn-s:disabled { background: #94a3b8 !important; cursor: not-allowed; }
+    .btn-cek  { background: #0284c7; } .btn-cek:hover  { background: #0369a1; }
+    .btn-trp  { background: #16a34a; } .btn-trp:hover  { background: #15803d; }
+    .btn-skr  { background: #7c3aed; } .btn-skr:hover  { background: #6d28d9; }
+    .btn-log  { background: #64748b; } .btn-log:hover  { background: #475569; }
+    .btn-sel  { background: #0d9488; } .btn-sel:hover  { background: #0f766e; }
+    .btn-fix  { background: #ea580c; } .btn-fix:hover  { background: #c2410c; }
+
+    .kartu-baris { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 12px; }
+    .kartu { flex: 1 1 130px; border: 1px solid #e2e8f0; border-left-width: 5px; border-radius: 6px; padding: 9px 13px; background: #fff; }
+    .kartu .angka { font-size: 21px; font-weight: bold; line-height: 1.1; }
+    .kartu .judul { font-size: 10.5px; color: #64748b; text-transform: uppercase; letter-spacing: .3px; margin-top: 2px; }
+    .k-baru .angka { color: #15803d; } .k-baru { border-left-color: #16a34a; }
+    .k-ubah .angka { color: #b45309; } .k-ubah { border-left-color: #f59e0b; }
+    .k-sama .angka { color: #475569; } .k-sama { border-left-color: #94a3b8; }
+    .k-lewat .angka { color: #b91c1c; } .k-lewat { border-left-color: #ef4444; }
+
+    .blok-prev { margin-bottom: 14px; }
+    .blok-prev h4 { font-size: 12.5px; color: #1e293b; margin-bottom: 6px; }
+    .lencana { font-size: 11px; padding: 2px 9px; border-radius: 10px; font-weight: bold; margin-left: 6px; }
+    .l-hijau { background:#dcfce7; color:#15803d; } .l-kuning{ background:#fef3c7; color:#b45309; }
+    .l-merah { background:#fee2e2; color:#b91c1c; } .l-abu  { background:#f1f5f9; color:#475569; }
+    .mini { max-height: 190px; overflow: auto; border: 1px solid #cbd5e1; border-radius: 5px; background: #fff; }
+    table.mini-t { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11.5px; }
+    table.mini-t th, table.mini-t td { border-bottom: 1px solid #e2e8f0; padding: 5px 9px; text-align: left; white-space: nowrap; }
+    table.mini-t thead th { position: sticky; top: 0; background: #f1f5f9; z-index: 2; }
+
+    /* ===== TABEL CUSTOMER ===== */
+    .wrap-cust { max-height: 58vh; overflow: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
+    table.t-cust { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+    table.t-cust th, table.t-cust td { border-bottom: 1px solid #e2e8f0; padding: 7px 10px; text-align: left; white-space: nowrap; }
+    table.t-cust thead th { position: sticky; top: 0; background: #800000; color: #fff; text-align: center; z-index: 2; }
+    table.t-cust tbody tr:nth-child(even) td { background: #f8fafc; }
+    table.t-cust tbody tr:hover td { background: #fff7ed; }
+    .kode { font-family: ui-monospace, Consolas, monospace; }
+    .pil-kunj { background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px; font-weight:bold; }
+    .pil-area { background:#f1f5f9; color:#334155; padding:2px 8px; border-radius:4px; }
+    .tak-cocok { background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px; font-size:11px; }
+    .pager-c { display:flex; gap:7px; align-items:center; justify-content:flex-end; margin-top:10px; font-size:12.5px; }
+    .pager-c button { background:#f1f5f9; border:1px solid #cbd5e1; padding:5px 11px; border-radius:4px; cursor:pointer; font-size:12px; }
+    .pager-c button:disabled { opacity:.45; cursor:not-allowed; }
+    .spin { display:none; align-items:center; gap:8px; color:#0284c7; font-weight:bold; font-size:13px; margin:10px 0; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <button class="floating-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+    <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='AGP';">
+  </button>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display='none';">
+      <h2>REPORT SYSTEM</h2>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+          <span>Target Divisi Tahunan</span>
+          <span class="arrow-icon" id="arrow-target">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-target">
+          <li><a href="target-agpc.html">AGPC</a></li>
+          <li><a href="target-agps.html">AGPS</a></li>
+          <li><a href="target-agpn.html">AGP N</a></li>
+        </ul>
+      </li>
+      <li><a href="history-transaksi.html">History Transaksi</a></li>
+<li>
+    <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+      <span>Laporan Harian Sales</span>
+      <span class="arrow-icon" id="arrow-sales">▶</span>
+    </a>
+    <ul class="submenu" id="submenu-sales">
+      <li><a href="list-sales-route.html">List Sales Route</a></li>
+      <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+      <li><a href="faktur-batal.html">Faktur Batal</a></li>
+      <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+    </ul>
+  </li>
+      <li><a href="target-product.html">Target Product AGPS & AGPC</a></li>
+      <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+      <li><a href="history-customer.html">History Customer</a></li>
+      <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+      <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+      <li><a href="#" onclick="handleLogout()" style="color: #ff9999; margin-top: 20px; border-top: 1px solid #990000;">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div class="page-title">LIST SALES ROUTE</div>
+    </div>
+
+    <div class="card">
+      <div class="tabs-lsr">
+        <button class="tab-lsr active" id="tab-rute" onclick="pilihTab('rute')">📍 Rute Salesman</button>
+        <button class="tab-lsr" id="tab-cust" onclick="pilihTab('cust')">👥 Customer &amp; Kode Kunjungan <span class="hit" id="hit-cust">—</span></button>
+      </div>
+
+      <!-- ============ PANEL 1: RUTE SALESMAN (seperti sebelumnya) ============ -->
+      <div id="panel-rute">
+      <h3>📍 Daftar Rute Salesman</h3>
+
+      <div class="info-box">
+        <b>Periode Bertugas</b> menentukan salesman mana yang dipakai pada Laporan Harian Sales.
+        Laporan bulan September tetap memakai salesman yang bertugas di September, walaupun orangnya sudah resign.
+        <br>Kalau ada salesman resign atau pindah rute, pakai tombol <b>🔄 Ganti Sales</b> supaya riwayatnya tersimpan
+        dan laporan bulan lalu tidak ikut berubah.
+      </div>
+
+      <div class="filter-bar-route">
+        <input type="text" id="cari-rute" class="cari-box"
+               placeholder="🔍 Cari kode salesman, nama salesman, area, team..." oninput="renderRouteTable()">
+        <label><input type="checkbox" id="chk-tampil-semua" onchange="renderRouteTable()"> Tampilkan juga penugasan lama (nonaktif)</label>
+        <span style="color:#64748b;" id="info-jumlah-route"></span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table-route">
+          <thead>
+            <tr>
+              <th style="width: 40px;">No</th>
+              <th style="width: 90px; text-align: center;">Divisi</th>
+              <th>Nama Team</th>
+              <th style="width: 120px; text-align: center;">Kode Area</th>
+              <th>Nama Area</th>
+              <th style="width: 120px;">Kode Salesman</th>
+              <th>Nama Salesman</th>
+              <th style="width: 180px; text-align: center;">Periode Bertugas</th>
+              <th style="width: 90px; text-align: center;">Status</th>
+              <th style="width: 110px; text-align: center;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-route">
+            <tr>
+              <td colspan="10" style="text-align: center; color: #64748b;">Memuat data rute...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      </div><!-- /panel-rute -->
+
+      <!-- ============ PANEL 2: CUSTOMER & KODE KUNJUNGAN ============ -->
+      <div id="panel-cust" class="hidden">
+        <h3>👥 Customer &amp; Kode Kunjungan</h3>
+
+        <div class="info-box">
+          Daftar customer beserta <b>kode kunjungan</b>-nya, diambil dari SQL Server (<b>MS_Terms</b> + <b>MS_Salesman</b>).
+          Dipakai mengisi <b>kode_kunjungan yang kosong</b> di <b>data_master_sales</b> dan <b>data_history_sales</b>,
+          supaya Laporan Harian Sales tetap benar walau sales ganti atau pindah rute.
+          <br><b>Nama Team, Kode Area</b> dan <b>Nama Area</b> terisi otomatis dari tab <b>Rute Salesman</b> berdasarkan
+          <b>kode salesman yang sama</b> &mdash; jadi kalau rutenya diubah, daftar ini ikut berubah sendiri.
+          <br>Hanya kolom <b>kd_kunjungan</b> (yang pertama) yang dipakai mengisi. Kolom 2 dan 3 hanya keterangan.
+        </div>
+
+        <div class="sync-bar">
+          <div class="grp">
+            <label>Tanggal Berlaku</label>
+            <input type="date" id="sync-tanggal">
+          </div>
+          <button class="btn-s btn-cek" id="btn-cek" onclick="lihatPerbandingan()">🔍 Lihat Perbandingan</button>
+          <button class="btn-s btn-trp" id="btn-trp" onclick="terapkanSync()" disabled>✅ Terapkan Perubahan</button>
+          <button class="btn-s btn-skr" id="btn-skr" onclick="syncSekarang()">🔄 Sync Sekarang</button>
+          <button class="btn-s btn-log" onclick="lihatLog()">🕑 Riwayat Sync</button>
+          <span style="font-size:12px; color:#64748b; margin-left:auto;" id="info-autosync">
+            Auto sync berjalan otomatis setiap hari.
+          </span>
+        </div>
+
+        <div class="spin" id="spin-cust"><span>⏳ Sedang memproses, harap tunggu...</span></div>
+
+        <div id="area-preview" class="hidden"></div>
+        <div id="area-log" class="hidden"></div>
+
+        <!-- ==== PERIKSA SELISIH DATA OMSET vs MASTER CUSTOMER ==== -->
+        <div class="info-box" style="margin-top:14px; background:#f0fdfa; border-color:#99f6e4;">
+          <b>🧮 Periksa Selisih Data Omset</b> &mdash; membandingkan <b>data_history_sales</b> dan
+          <b>data_master_sales</b> dengan master customer berdasarkan <b>kode customer</b>, lalu
+          memperbaiki <b>nama customer</b> dan <b>kode kunjungan</b> yang berbeda.
+          <br><b>Kode kunjungan dicocokkan menurut tanggal transaksinya</b>, bukan menurut kode yang
+          berlaku hari ini &mdash; jadi transaksi bulan lalu tetap memakai kode bulan lalu dan
+          laporan lama tidak berubah.
+          <br>Nama customer hanya ditimpa kalau nama di master <b>tidak kosong</b>.
+        </div>
+
+        <div class="sync-bar" style="background:#f0fdfa; border-color:#99f6e4;">
+          <div class="grp">
+            <label>Periode Dari (opsional)</label>
+            <input type="date" id="sel-dari">
+          </div>
+          <div class="grp">
+            <label>Sampai (opsional)</label>
+            <input type="date" id="sel-sampai">
+          </div>
+          <label style="font-size:12.5px; display:flex; align-items:center; gap:5px;">
+            <input type="checkbox" id="sel-chk-nama" checked> Nama Customer
+          </label>
+          <label style="font-size:12.5px; display:flex; align-items:center; gap:5px;">
+            <input type="checkbox" id="sel-chk-kunj" checked> Kode Kunjungan
+          </label>
+          <button class="btn-s btn-sel" id="btn-sel" onclick="cekSelisih()">🧮 Cek Selisih</button>
+          <button class="btn-s btn-fix" id="btn-fix" onclick="perbaikiSelisih()" disabled>🛠️ Perbaiki Selisih</button>
+          <span style="font-size:12px; color:#64748b; margin-left:auto;">
+            Kosongkan tanggal = semua periode.
+          </span>
+        </div>
+
+        <div id="area-selisih" class="hidden"></div>
+
+        <div class="filter-bar-route" style="margin-top:12px;">
+          <input type="text" id="cari-cust" class="cari-box" style="width:360px;"
+                 placeholder="🔍 Cari kode salesman, nama salesman, kode customer, kode kunjungan, area...">
+          <label><input type="checkbox" id="chk-cust-semua" onchange="muatCustomer(1)"> Tampilkan juga yang sudah tidak berlaku</label>
+          <select id="cust-perhal" onchange="muatCustomer(1)" style="padding:6px 9px; border:1px solid #cbd5e1; border-radius:4px; font-size:12.5px;">
+            <option value="50">50 / halaman</option>
+            <option value="100">100 / halaman</option>
+            <option value="250">250 / halaman</option>
+            <option value="500">500 / halaman</option>
+          </select>
+          <span style="color:#64748b;" id="info-jumlah-cust"></span>
+        </div>
+
+        <div class="wrap-cust">
+          <table class="t-cust">
+            <thead>
+              <tr>
+                <th style="width:40px;">No</th>
+                <th>Kode Customer</th>
+                <th>Nama Customer</th>
+                <th style="text-align:center;">Kode Kunjungan</th>
+                <th style="text-align:center;">Kunj 2</th>
+                <th style="text-align:center;">Kunj 3</th>
+                <th style="text-align:center;">Divisi</th>
+                <th>Nama Team</th>
+                <th style="text-align:center;">Kode Area</th>
+                <th>Nama Area</th>
+                <th>Kode Salesman</th>
+                <th>Nama Salesman</th>
+                <th style="text-align:center;">Berlaku</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-cust">
+              <tr><td colspan="13" style="text-align:center; color:#64748b; padding:20px;">Memuat data customer...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pager-c">
+          <span id="info-hal-cust" style="margin-right:auto; color:#64748b;"></span>
+          <button id="c-prev" onclick="gantiHalCust(-1)">◀ Sebelumnya</button>
+          <span id="c-hal" style="font-weight:bold;">Hal 1 / 1</span>
+          <button id="c-next" onclick="gantiHalCust(1)">Selanjutnya ▶</button>
+        </div>
+      </div><!-- /panel-cust -->
+    </div>
+  </div>
+
+  <!-- MODAL POPUP FORM EDIT DATA RUTE -->
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal-card">
+      <h3>✏️ Edit Data Rute Sales</h3>
+      <form id="form-edit-route" onsubmit="submitEditRoute(event)">
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label>Nama Divisi</label>
+          <input type="text" id="edit-nama-divisi" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Team</label>
+          <input type="text" id="edit-nama-team" required>
+        </div>
+        <div class="form-group">
+          <label>Kode Area</label>
+          <input type="text" id="edit-kode-area" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Area</label>
+          <input type="text" id="edit-nama-area" required>
+        </div>
+        <div class="form-group">
+          <label>Kode Salesman</label>
+          <input type="text" id="edit-kode-salesman" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Salesman</label>
+          <input type="text" id="edit-nama-salesman" required>
+        </div>
+
+        <hr style="border:none; border-top:1px dashed #cbd5e1; margin:14px 0;">
+        <p style="font-size:12px; color:#64748b; margin-bottom:10px;">
+          Periode bertugas menentukan salesman mana yang dipakai pada laporan untuk tanggal tersebut.
+          Kosongkan <b>Berlaku Sampai</b> kalau masih bertugas.
+        </p>
+        <div style="display:flex; gap:10px;">
+          <div class="form-group" style="flex:1;">
+            <label>Berlaku Mulai</label>
+            <input type="date" id="edit-berlaku-mulai">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Berlaku Sampai</label>
+            <input type="date" id="edit-berlaku-sampai">
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="font-weight:normal; display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="edit-aktif" checked style="width:auto;">
+            Masih bertugas (kalau dilepas dan tanggal selesai kosong, otomatis ditutup hari ini)
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeEditModal()">Batal</button>
+          <button type="submit" class="btn-simpan">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL GANTI SALESMAN -->
+  <div class="modal-overlay" id="modal-ganti">
+    <div class="modal-card" style="border-top-color:#0284c7;">
+      <h3 style="color:#0284c7;">🔄 Ganti Salesman pada Route Ini</h3>
+      <p style="font-size:12.5px; color:#64748b; margin-bottom:12px; line-height:1.6;">
+        Dipakai saat salesman resign atau pindah rute. Penugasan lama <b>ditutup</b>, bukan dihapus,
+        lalu dibuat penugasan baru. Laporan bulan-bulan sebelumnya tetap memakai salesman lama.
+      </p>
+
+      <form id="form-ganti-sales" onsubmit="submitGantiSales(event)">
+        <input type="hidden" id="ganti-id">
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:14px; font-size:13px;">
+          <div style="color:#64748b;">Route</div>
+          <div style="font-weight:bold; margin-bottom:6px;" id="ganti-info-route">-</div>
+          <div style="color:#64748b;">Salesman saat ini</div>
+          <div style="font-weight:bold; color:#b91c1c;" id="ganti-sales-lama">-</div>
+        </div>
+
+        <div class="form-group">
+          <label>Kode Salesman Baru (boleh dikosongkan kalau kodenya sama)</label>
+          <input type="text" id="ganti-kode-baru" placeholder="Contoh: 2P02-0099">
+        </div>
+        <div class="form-group">
+          <label>Nama Salesman Baru</label>
+          <input type="text" id="ganti-nama-baru" required placeholder="Nama lengkap salesman pengganti">
+        </div>
+        <div class="form-group">
+          <label>Mulai Bertugas Tanggal</label>
+          <input type="date" id="ganti-mulai" required>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeGantiModal()">Batal</button>
+          <button type="submit" class="btn-simpan" style="background:#0284c7;">Simpan Pergantian</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PINDAH RUTE -->
+  <div class="modal-overlay" id="modal-pindah">
+    <div class="modal-card" style="border-top-color:#7c3aed; width:560px;">
+      <h3 style="color:#7c3aed;">↪️ Pindah Rute</h3>
+      <p style="font-size:12.5px; color:#64748b; margin-bottom:12px; line-height:1.6;">
+        Dipakai saat salesman <b>pindah ke area lain</b>. Kode salesman ikut pindah bersama orangnya.
+        Dua rute berubah sekaligus dalam satu kali simpan, memakai tanggal yang sama.
+        Penugasan lama <b>ditutup</b>, bukan dihapus, jadi laporan bulan sebelumnya tidak berubah.
+      </p>
+
+      <form id="form-pindah" onsubmit="submitPindah(event)">
+        <input type="hidden" id="pindah-id">
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:12px; font-size:13px;">
+          <div style="color:#64748b;">Salesman yang pindah</div>
+          <div style="font-weight:bold;" id="pindah-sales">-</div>
+          <div style="color:#64748b; margin-top:6px;">Dari rute</div>
+          <div style="font-weight:bold; color:#b91c1c;" id="pindah-asal">-</div>
+        </div>
+
+        <div class="form-group">
+          <label>Pindah ke Rute</label>
+          <select id="pindah-tujuan" onchange="perbaruiAlurPindah()" required>
+            <option value="">-- pilih rute tujuan --</option>
+          </select>
+        </div>
+
+        <hr style="border:none; border-top:1px dashed #cbd5e1; margin:14px 0;">
+
+        <p style="font-size:12.5px; color:#1e293b; font-weight:bold; margin-bottom:8px;">
+          Siapa yang menggantikan di rute asal?
+        </p>
+        <p style="font-size:11.5px; color:#64748b; margin-bottom:10px;">
+          Biasanya kembali ke salesman lama. Kodenya diketik manual karena hanya Bapak yang tahu.
+        </p>
+        <div style="display:flex; gap:10px;">
+          <div class="form-group" style="flex:1;">
+            <label>Kode Salesman Pengganti</label>
+            <input type="text" id="pindah-kode-ganti" placeholder="Contoh: 2P02-0019" oninput="perbaruiAlurPindah()">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Nama Salesman Pengganti</label>
+            <input type="text" id="pindah-nama-ganti" placeholder="Nama lengkap" oninput="perbaruiAlurPindah()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="font-weight:normal; display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="pindah-kosongkan" style="width:auto;" onchange="perbaruiAlurPindah()">
+            Belum ada penggantinya — kosongkan dulu rute asal
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>Berlaku Mulai Tanggal</label>
+          <input type="date" id="pindah-mulai" required onchange="perbaruiAlurPindah()">
+        </div>
+
+        <div class="alur" id="pindah-alur"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closePindahModal()">Batal</button>
+          <button type="submit" class="btn-simpan" style="background:#7c3aed;">Simpan Pindah Rute</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/sidebar.js"></script>
+  <script>
+    if (!localStorage.getItem('agp_user_logged')) window.location.href = 'index.html';
+
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('agp_user_logged');
+        window.location.href = 'index.html';
+      }
+    }
+
+    let routeData = [];
+
+    const fmtTgl = (t) => {
+      if (!t) return null;
+      const [y, m, d] = t.split('-');
+      return `${d}/${m}/${y}`;
+    };
+
+    function periodeText(item) {
+      const mulai = fmtTgl(item.berlaku_mulai);
+      const sampai = fmtTgl(item.berlaku_sampai);
+      if (!mulai && !sampai) return '<span style="color:#94a3b8;">belum diatur</span>';
+      if (mulai && !sampai) return `${mulai} &rarr; sekarang`;
+      if (!mulai && sampai) return `s/d ${sampai}`;
+      return `${mulai} &rarr; ${sampai}`;
+    }
+
+    function sedangBerlaku(item) {
+      const hariIni = new Date().toISOString().slice(0, 10);
+      const mulaiOk = !item.berlaku_mulai || item.berlaku_mulai <= hariIni;
+      const sampaiOk = !item.berlaku_sampai || item.berlaku_sampai >= hariIni;
+      return mulaiOk && sampaiOk;
+    }
+
+    async function loadSalesRoute() {
+      const tbody = document.getElementById('tbody-route');
+      try {
+        const response = await fetch('http://localhost:3000/api/sales-routes');
+        if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
+
+        const result = await response.json();
+        if (result.success && result.data.length > 0) {
+          routeData = result.data;
+          renderRouteTable();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #94a3b8;">Belum ada data rute salesman.</td></tr>`;
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444;">Gagal memuat data dari server backend (${err.message}). Pastikan server Node.js berjalan!</td></tr>`;
+      }
+    }
+
+    // Pencarian di tab Rute: kode salesman, nama salesman, area, team, divisi.
+    // Beberapa kata dipisah spasi harus cocok semua.
+    function cocokCari(item, kata) {
+      if (kata.length === 0) return true;
+      const gabung = [item.nama_divisi, item.nama_team, item.kode_area, item.nama_area,
+                      item.kode_salesman, item.nama_salesman].join(' ').toLowerCase();
+      return kata.every(k => gabung.includes(k));
+    }
+
+    function tandai(teks, kata) {
+      let h = String(teks == null ? '' : teks)
+        .replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+      kata.forEach(k => {
+        if (!k) return;
+        const aman = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        h = h.replace(new RegExp(`(${aman})`, 'gi'), '<mark>$1</mark>');
+      });
+      return h;
+    }
+
+    function renderRouteTable() {
+      const tbody = document.getElementById('tbody-route');
+      const tampilSemua = document.getElementById('chk-tampil-semua').checked;
+      const kata = document.getElementById('cari-rute').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+      const dasar = tampilSemua ? routeData : routeData.filter(sedangBerlaku);
+      const daftar = dasar.filter(x => cocokCari(x, kata));
+
+      document.getElementById('info-jumlah-route').innerText =
+        kata.length
+          ? `Ketemu ${daftar.length} dari ${dasar.length} baris yang ditampilkan (total ${routeData.length}).`
+          : `Menampilkan ${daftar.length} dari ${routeData.length} baris penugasan.`;
+
+      if (daftar.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#94a3b8;">${
+          kata.length ? 'Tidak ada rute yang cocok dengan pencarian.' : 'Tidak ada data untuk ditampilkan.'}</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = daftar.map((item, index) => {
+        const berlaku = sedangBerlaku(item);
+        const t = (v) => tandai(v || '-', kata);
+        return `
+        <tr class="${berlaku ? '' : 'row-nonaktif'}">
+          <td style="text-align: center;">${index + 1}</td>
+          <td style="text-align: center;"><b>${t(item.nama_divisi)}</b></td>
+          <td>${t(item.nama_team)}</td>
+          <td style="text-align: center;"><span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px; font-weight:bold;">${t(item.kode_area)}</span></td>
+          <td>${t(item.nama_area)}</td>
+          <td>${t(item.kode_salesman)}</td>
+          <td><b>${t(item.nama_salesman)}</b></td>
+          <td style="text-align: center; font-size: 12px;">${periodeText(item)}</td>
+          <td style="text-align: center;">
+            <span class="${berlaku ? 'badge-aktif' : 'badge-nonaktif'}">${berlaku ? 'Berlaku' : 'Selesai'}</span>
+          </td>
+          <td style="text-align: center; white-space: nowrap;">
+            <button class="btn-edit-icon" onclick="openEditModal(${item.id})" title="Edit Rute">✏️</button>
+            <button class="btn-ganti-sales" onclick="openGantiModal(${item.id})" title="Ganti Salesman (resign / diganti orang lain)">🔄</button>
+            <button class="btn-pindah" onclick="openPindahModal(${item.id})" title="Pindah Rute (salesman ini pindah ke area lain)">↪️</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function openEditModal(id) {
+      const item = routeData.find(r => r.id === id);
+      if (!item) return;
+
+      document.getElementById('edit-id').value = item.id;
+      document.getElementById('edit-nama-divisi').value = item.nama_divisi || '';
+      document.getElementById('edit-nama-team').value = item.nama_team || '';
+      document.getElementById('edit-kode-area').value = item.kode_area || '';
+      document.getElementById('edit-nama-area').value = item.nama_area || '';
+      document.getElementById('edit-kode-salesman').value = item.kode_salesman || '';
+      document.getElementById('edit-nama-salesman').value = item.nama_salesman || '';
+      document.getElementById('edit-berlaku-mulai').value = item.berlaku_mulai || '';
+      document.getElementById('edit-berlaku-sampai').value = item.berlaku_sampai || '';
+      document.getElementById('edit-aktif').checked = item.aktif !== false;
+
+      document.getElementById('modal-edit').classList.add('active');
+    }
+
+    function closeEditModal() {
+      document.getElementById('modal-edit').classList.remove('active');
+    }
+
+    async function submitEditRoute(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+
+      const payload = {
+        nama_divisi: document.getElementById('edit-nama-divisi').value,
+        nama_team: document.getElementById('edit-nama-team').value,
+        kode_area: document.getElementById('edit-kode-area').value,
+        nama_area: document.getElementById('edit-nama-area').value,
+        kode_salesman: document.getElementById('edit-kode-salesman').value,
+        nama_salesman: document.getElementById('edit-nama-salesman').value,
+        berlaku_mulai: document.getElementById('edit-berlaku-mulai').value || null,
+        berlaku_sampai: document.getElementById('edit-berlaku-sampai').value || null,
+        aktif: document.getElementById('edit-aktif').checked
+      };
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/sales-routes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert('Data rute berhasil diperbarui!');
+          closeEditModal();
+          loadSalesRoute();
+        } else {
+          alert('Gagal update: ' + result.message);
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan saat mengupdate data!');
+      }
+    }
+
+    // ===== GANTI SALESMAN (resign / pindah rute) =====
+    function openGantiModal(id) {
+      const item = routeData.find(r => r.id === id);
+      if (!item) return;
+
+      document.getElementById('ganti-id').value = item.id;
+      document.getElementById('ganti-info-route').innerText =
+        `${item.nama_divisi} | ${item.kode_area} - ${item.nama_area}`;
+      document.getElementById('ganti-sales-lama').innerText =
+        `${item.nama_salesman || '-'} (${item.kode_salesman || '-'})`;
+      document.getElementById('ganti-kode-baru').value = '';
+      document.getElementById('ganti-nama-baru').value = '';
+
+      // Default: mulai tanggal 1 bulan depan
+      const d = new Date();
+      const bulanDepan = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      document.getElementById('ganti-mulai').value = bulanDepan.toISOString().slice(0, 10);
+
+      document.getElementById('modal-ganti').classList.add('active');
+    }
+
+    function closeGantiModal() {
+      document.getElementById('modal-ganti').classList.remove('active');
+    }
+
+    async function submitGantiSales(e) {
+      e.preventDefault();
+      const id = document.getElementById('ganti-id').value;
+      const mulai = document.getElementById('ganti-mulai').value;
+      const namaBaru = document.getElementById('ganti-nama-baru').value.trim();
+
+      if (!namaBaru || !mulai) return alert('Nama salesman baru dan tanggal mulai wajib diisi!');
+
+      const tglSebelum = new Date(new Date(mulai).getTime() - 86400000).toISOString().slice(0, 10);
+      if (!confirm(`Salesman lama akan berlaku sampai ${tglSebelum}, lalu digantikan ${namaBaru} mulai ${mulai}.\n\nLaporan periode sebelumnya tidak akan berubah. Lanjutkan?`)) return;
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/sales-routes/${id}/ganti-salesman`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kode_salesman_baru: document.getElementById('ganti-kode-baru').value.trim(),
+            nama_salesman_baru: namaBaru,
+            mulai_tanggal: mulai
+          })
+        });
+
+        const result = await response.json();
+        alert((result.success ? '✅ ' : '❌ ') + result.message);
+        if (result.success) {
+          closeGantiModal();
+          loadSalesRoute();
+        }
+      } catch (err) {
+        console.error(err);
+        alert('❌ Terjadi kesalahan saat mengganti salesman!');
+      }
+    }
+
+    // =====================================================================
+    // PINDAH RUTE (satu salesman pindah, dua rute berubah sekaligus)
+    // =====================================================================
+    let daftarArea = [];
+
+    async function muatDaftarArea() {
+      try {
+        const r = await fetch('http://localhost:3000/api/sales-routes-area');
+        const j = await r.json();
+        if (j.success) daftarArea = j.data;
+      } catch (err) { console.error('Gagal memuat daftar area:', err); }
+    }
+
+    async function openPindahModal(id) {
+      const item = routeData.find(r => r.id === id);
+      if (!item) return;
+      if (daftarArea.length === 0) await muatDaftarArea();
+
+      document.getElementById('pindah-id').value = item.id;
+      document.getElementById('pindah-sales').innerText =
+        `${item.nama_salesman || '-'} (${item.kode_salesman || '-'})`;
+      document.getElementById('pindah-asal').innerText =
+        `${item.nama_divisi || ''} | ${item.kode_area || '-'} - ${item.nama_area || '-'}`;
+
+      const sel = document.getElementById('pindah-tujuan');
+      const normA = String(item.kode_area || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      sel.innerHTML = '<option value="">-- pilih rute tujuan --</option>' +
+        daftarArea
+          .filter(a => String(a.kode_area || '').toUpperCase().replace(/[^A-Z0-9]/g, '') !== normA)
+          .map(a => {
+            const isi = a.terisi
+              ? `sekarang: ${a.nama_salesman || '-'} (${a.kode_salesman || '-'})`
+              : 'kosong';
+            return `<option value="${a.kode_area}">${a.kode_area} — ${a.nama_area || ''} · ${isi}</option>`;
+          }).join('');
+
+      document.getElementById('pindah-kode-ganti').value = '';
+      document.getElementById('pindah-nama-ganti').value = '';
+      document.getElementById('pindah-kosongkan').checked = false;
+
+      const d = new Date();
+      document.getElementById('pindah-mulai').value =
+        new Date(d.getFullYear(), d.getMonth() + 1, 1).toLocaleDateString('sv-SE');
+
+      perbaruiAlurPindah();
+      document.getElementById('modal-pindah').classList.add('active');
+    }
+
+    function closePindahModal() {
+      document.getElementById('modal-pindah').classList.remove('active');
+    }
+
+    // Tampilkan ringkasan apa yang akan terjadi, sebelum disimpan
+    function perbaruiAlurPindah() {
+      const id = parseInt(document.getElementById('pindah-id').value);
+      const item = routeData.find(r => r.id === id);
+      const el = document.getElementById('pindah-alur');
+      if (!item) { el.innerHTML = ''; return; }
+
+      const kodeTujuan = document.getElementById('pindah-tujuan').value;
+      const mulai = document.getElementById('pindah-mulai').value;
+      const kosongkan = document.getElementById('pindah-kosongkan').checked;
+      const namaGanti = document.getElementById('pindah-nama-ganti').value.trim();
+      const kodeGanti = document.getElementById('pindah-kode-ganti').value.trim();
+
+      const dis = (ya) => {
+        document.getElementById('pindah-kode-ganti').disabled = ya;
+        document.getElementById('pindah-nama-ganti').disabled = ya;
+      };
+      dis(kosongkan);
+
+      if (!kodeTujuan || !mulai) {
+        el.innerHTML = '<span style="color:#94a3b8;">Pilih rute tujuan dan tanggal dulu untuk melihat ringkasannya.</span>';
+        return;
+      }
+
+      const tujuan = daftarArea.find(a => a.kode_area === kodeTujuan);
+      const sblm = new Date(new Date(mulai).getTime() - 86400000).toLocaleDateString('sv-SE');
+      const sales = `${item.nama_salesman || '-'} <span class="tag">${item.kode_salesman || '-'}</span>`;
+
+      // Kode salesman ikut pindah, jadi rute asal tidak boleh memakai kode yang sama
+      const kodeBentrok = !kosongkan && kodeGanti &&
+        kodeGanti.toUpperCase() === String(item.kode_salesman || '').trim().toUpperCase();
+
+      let h = '';
+      if (kodeBentrok) {
+        h += `<div class="baris" style="background:#fee2e2; color:#b91c1c; padding:7px 10px;
+              border-radius:5px; margin-bottom:8px; font-weight:bold;">
+              ⚠️ Kode pengganti masih ${item.kode_salesman} — itu kode ${item.nama_salesman} yang sedang pindah.
+              Isi kode salesman lain untuk ${item.kode_area}, atau centang "kosongkan dulu".</div>`;
+      }
+      h += `<div class="baris"><b>Mulai ${mulai}:</b></div>`;
+      h += `<div class="baris">1. <span class="tag">${item.kode_area}</span> ${item.nama_area || ''} &rarr;
+            <span class="dari">${sales}</span> ditutup s/d ${sblm}</div>`;
+      h += kosongkan
+        ? `<div class="baris">2. <span class="tag">${item.kode_area}</span> dibiarkan <b>kosong</b></div>`
+        : `<div class="baris">2. <span class="tag">${item.kode_area}</span> diisi
+           <span class="ke">${namaGanti || '(nama pengganti belum diisi)'}
+           <span class="tag">${kodeGanti || item.kode_salesman || '-'}</span></span></div>`;
+
+      let n = 3;
+      if (tujuan && tujuan.terisi) {
+        h += `<div class="baris">${n++}. <span class="tag">${tujuan.kode_area}</span> ${tujuan.nama_area || ''} &rarr;
+              <span class="dari">${tujuan.nama_salesman || '-'} <span class="tag">${tujuan.kode_salesman || '-'}</span></span>
+              ditutup s/d ${sblm}</div>`;
+      }
+      h += `<div class="baris">${n}. <span class="tag">${kodeTujuan}</span> ${tujuan ? (tujuan.nama_area || '') : ''} diisi
+            <span class="ke">${sales}</span></div>`;
+
+      el.innerHTML = h;
+    }
+
+    async function submitPindah(e) {
+      e.preventDefault();
+      const id = document.getElementById('pindah-id').value;
+      const kodeAreaTujuan = document.getElementById('pindah-tujuan').value;
+      const mulai = document.getElementById('pindah-mulai').value;
+      const kosongkan = document.getElementById('pindah-kosongkan').checked;
+      const namaGanti = document.getElementById('pindah-nama-ganti').value.trim();
+      const kodeGanti = document.getElementById('pindah-kode-ganti').value.trim();
+
+      if (!kodeAreaTujuan || !mulai) return alert('Rute tujuan dan tanggal mulai wajib diisi!');
+      if (!kosongkan && !namaGanti) {
+        return alert('Nama salesman pengganti untuk rute asal wajib diisi.\n\nKalau memang belum ada penggantinya, centang "kosongkan dulu rute asal".');
+      }
+      if (!kosongkan && !kodeGanti) {
+        return alert('Kode salesman pengganti wajib diisi.\n\nPada Pindah Rute, kode salesman ikut pindah bersama orangnya, jadi rute asal harus diisi kode salesman yang berbeda.');
+      }
+      const item2 = routeData.find(r => r.id === parseInt(id));
+      if (!kosongkan && item2 && kodeGanti.toUpperCase() === String(item2.kode_salesman || '').trim().toUpperCase()) {
+        return alert(`Kode pengganti tidak boleh sama dengan ${item2.kode_salesman}.\n\n` +
+                     `Itu kode ${item2.nama_salesman} yang sedang pindah — kodenya ikut pindah ke rute tujuan.\n` +
+                     `Isi kode salesman lain untuk rute asal, atau centang "kosongkan dulu rute asal".`);
+      }
+
+      const ringkas = document.getElementById('pindah-alur').innerText.replace(/\n+/g, '\n');
+      if (!confirm(`Simpan pindah rute berikut?\n\n${ringkas}\n\nLaporan bulan-bulan sebelumnya tidak akan berubah.`)) return;
+
+      try {
+        const res = await fetch(`http://localhost:3000/api/sales-routes/${id}/pindah-rute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kode_area_tujuan: kodeAreaTujuan,
+            kode_pengganti: kodeGanti,
+            nama_pengganti: namaGanti,
+            kosongkan_rute_asal: kosongkan,
+            mulai_tanggal: mulai
+          })
+        });
+        const j = await res.json();
+        alert((j.success ? '✅ ' : '❌ ') + j.message);
+        if (j.success) {
+          closePindahModal();
+          daftarArea = [];
+          await muatDaftarArea();
+          loadSalesRoute();
+        }
+      } catch (err) {
+        console.error(err);
+        alert('❌ Terjadi kesalahan saat memindahkan rute!');
+      }
+    }
+
+    // =====================================================================
+    // TAB 2: CUSTOMER & KODE KUNJUNGAN
+    // =====================================================================
+    const API2 = 'http://localhost:3000';
+    let halCust = 1, totalHalCust = 1, permintaanKe = 0, custSudahDimuat = false;
+    let hasilBanding = null;
+
+    const esc2 = (s) => String(s == null ? '' : s)
+      .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    function tglHariIni() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function pilihTab(nama) {
+      const rute = nama === 'rute';
+      document.getElementById('panel-rute').classList.toggle('hidden', !rute);
+      document.getElementById('panel-cust').classList.toggle('hidden', rute);
+      document.getElementById('tab-rute').classList.toggle('active', rute);
+      document.getElementById('tab-cust').classList.toggle('active', !rute);
+      if (!rute && !custSudahDimuat) { custSudahDimuat = true; muatCustomer(1); }
+    }
+
+    function spin(tampil, pesan) {
+      const el = document.getElementById('spin-cust');
+      if (pesan) el.querySelector('span').innerText = '⏳ ' + pesan;
+      el.style.display = tampil ? 'flex' : 'none';
+    }
+
+    // ---------- Daftar customer ----------
+    async function muatCustomer(halaman) {
+      if (halaman) halCust = halaman;
+      const tbody = document.getElementById('tbody-cust');
+      const ke = ++permintaanKe;
+
+      const cari = document.getElementById('cari-cust').value.trim();
+      const perHal = document.getElementById('cust-perhal').value;
+      const semua = document.getElementById('chk-cust-semua').checked;
+
+      try {
+        const url = `${API2}/api/kunjungan-customer?halaman=${halCust}&per_hal=${perHal}`
+                  + `&hanya_aktif=${semua ? 'false' : 'true'}&cari=${encodeURIComponent(cari)}`;
+        const res = await fetch(url);
+        const j = await res.json();
+        if (ke !== permintaanKe) return;          // hasil lama, abaikan
+        if (!j.success) { tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;color:#ef4444;padding:18px;">${esc2(j.message)}</td></tr>`; return; }
+
+        totalHalCust = j.total_halaman;
+        halCust = j.halaman;
+
+        document.getElementById('hit-cust').innerText = j.ringkasan.total_aktif.toLocaleString('id-ID');
+        document.getElementById('info-jumlah-cust').innerText =
+          `${j.total.toLocaleString('id-ID')} baris${cari ? ' (hasil pencarian)' : ''}` +
+          (j.ringkasan.tanpa_salesman > 0 ? ` · ${j.ringkasan.tanpa_salesman} tanpa kode salesman` : '');
+        document.getElementById('info-hal-cust').innerText =
+          `Menampilkan ${j.data.length} baris dari ${j.total.toLocaleString('id-ID')}`;
+        document.getElementById('c-hal').innerText = `Hal ${halCust} / ${totalHalCust}`;
+        document.getElementById('c-prev').disabled = halCust <= 1;
+        document.getElementById('c-next').disabled = halCust >= totalHalCust;
+
+        if (j.data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:22px;">
+            ${cari ? 'Tidak ada customer yang cocok dengan pencarian.'
+                   : 'Belum ada data customer. Klik <b>Sync Sekarang</b> untuk mengambil dari SQL Server.'}</td></tr>`;
+          return;
+        }
+
+        const kata = cari.toLowerCase().split(/\s+/).filter(Boolean);
+        const mulai = (halCust - 1) * parseInt(perHal);
+        tbody.innerHTML = j.data.map((x, i) => `
+          <tr>
+            <td style="text-align:center;color:#94a3b8;">${mulai + i + 1}</td>
+            <td class="kode">${tandai(x.kode_customer, kata)}</td>
+            <td title="${esc2(x.nama_customer || '')}">${x.nama_customer
+                ? tandai(x.nama_customer, kata)
+                : '<span style="color:#cbd5e1;">-</span>'}</td>
+            <td style="text-align:center;"><span class="pil-kunj">${tandai(x.kode_kunjungan, kata)}</span></td>
+            <td style="text-align:center;" class="kode">${esc2(x.kode_kunjungan2 || '-')}</td>
+            <td style="text-align:center;" class="kode">${esc2(x.kode_kunjungan3 || '-')}</td>
+            <td style="text-align:center;"><b>${tandai(x.divisi || '-', kata)}</b></td>
+            <td>${x.route_cocok ? tandai(x.nama_team || '-', kata) : '<span class="tak-cocok">rute tidak ketemu</span>'}</td>
+            <td style="text-align:center;">${x.kode_area ? `<span class="pil-area">${tandai(x.kode_area, kata)}</span>` : '-'}</td>
+            <td>${tandai(x.nama_area || '-', kata)}</td>
+            <td class="kode">${tandai(x.kode_salesman || '-', kata)}</td>
+            <td><b>${tandai(x.nama_salesman || '-', kata)}</b></td>
+            <td style="text-align:center;font-size:11.5px;color:#64748b;">
+              ${esc2(x.berlaku_mulai || '-')}${x.berlaku_sampai ? ' s/d ' + esc2(x.berlaku_sampai) : ''}</td>
+          </tr>`).join('');
+      } catch (err) {
+        console.error(err);
+        if (ke === permintaanKe) {
+          tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;color:#ef4444;padding:18px;">
+            Gagal memuat data. Pastikan server.js berjalan.</td></tr>`;
+        }
+      }
+    }
+
+    function gantiHalCust(arah) {
+      const baru = Math.min(totalHalCust, Math.max(1, halCust + arah));
+      if (baru === halCust) return;
+      muatCustomer(baru);
+      document.querySelector('.wrap-cust').scrollTop = 0;
+    }
+
+    let timerCari = null;
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('cari-cust');
+      if (el) el.addEventListener('input', () => {
+        clearTimeout(timerCari);
+        timerCari = setTimeout(() => muatCustomer(1), 400);
+      });
+    });
+
+    // ---------- Perbandingan sebelum diterapkan ----------
+    function kartu(k, a, j) { return `<div class="kartu ${k}"><div class="angka">${a}</div><div class="judul">${j}</div></div>`; }
+
+    function tabelMini(kolom, baris, isi) {
+      if (!baris || baris.length === 0) return `<div class="mini"><div style="text-align:center;color:#94a3b8;padding:14px;font-size:12px;">Tidak ada.</div></div>`;
+      return `<div class="mini"><table class="mini-t"><thead><tr>${kolom.map(k=>`<th>${esc2(k)}</th>`).join('')}</tr></thead>
+              <tbody>${baris.map(isi).join('')}</tbody></table></div>`;
+    }
+
+    async function lihatPerbandingan() {
+      const btn = document.getElementById('btn-cek');
+      btn.disabled = true; spin(true, 'Membaca daftar customer dari SQL Server...');
+      document.getElementById('area-log').classList.add('hidden');
+      try {
+        const tgl = document.getElementById('sync-tanggal').value || tglHariIni();
+        const res = await fetch(`${API2}/api/sync-kunjungan-sqlserver?tanggal_berlaku=${encodeURIComponent(tgl)}`);
+        const h = await res.json();
+        if (!h.success) { alert('❌ ' + h.message); return; }
+        hasilBanding = h;
+
+        const r = h.ringkasan;
+        let isi = `<div class="kartu-baris">
+          ${kartu('k-baru',  r.baru,    'Customer Baru')}
+          ${kartu('k-ubah',  r.berubah, 'Kode Berubah')}
+          ${kartu('k-sama',  r.sama,    'Sudah Sama')}
+          ${kartu('k-lewat', r.tanpa_kode + r.bentrok, 'Dilewati')}
+        </div>`;
+
+        isi += `<div class="blok-prev"><h4>Customer Baru <span class="lencana l-hijau">${r.baru}</span>
+          <span style="font-weight:normal;color:#64748b;font-size:11.5px;">
+          — yang bertanda hijau diberlakukan sejak transaksi pertamanya, supaya data bulan lalu ikut terisi</span></h4>
+          ${tabelMini(['Kode Customer','Kode Kunjungan','Salesman','Divisi','Berlaku Mulai'], h.baru, x=>`
+            <tr><td class="kode">${esc2(x.kode_customer)}</td>
+                <td class="kode"><b>${esc2(x.kode_kunjungan)}</b></td>
+                <td>${esc2(x.nama_salesman)} <span class="kode" style="color:#94a3b8;">${esc2(x.kode_salesman)}</span></td>
+                <td>${esc2(x.divisi)}</td>
+                <td>${esc2(x.berlaku_mulai_usulan)} ${x.punya_transaksi_lama?'<span class="lencana l-hijau">ditarik mundur</span>':''}</td></tr>`)}
+        </div>`;
+
+        isi += `<div class="blok-prev"><h4>Kode Kunjungan Berubah <span class="lencana l-kuning">${r.berubah}</span>
+          <span style="font-weight:normal;color:#64748b;font-size:11.5px;">
+          — kode lama ditutup, laporan bulan sebelumnya tidak ikut berubah</span></h4>
+          ${tabelMini(['Kode Customer','Perubahan','Salesman','Divisi'], h.berubah, x=>`
+            <tr><td class="kode">${esc2(x.kode_customer)}</td>
+                <td class="kode">${esc2(x.kode_kunjungan_lama)} <b style="color:#b45309;">&rarr;</b> <b>${esc2(x.kode_kunjungan)}</b></td>
+                <td>${esc2(x.nama_salesman)} <span class="kode" style="color:#94a3b8;">${esc2(x.kode_salesman)}</span></td>
+                <td>${esc2(x.divisi)}</td></tr>`)}
+        </div>`;
+
+        if (r.bentrok > 0) {
+          isi += `<div class="blok-prev"><h4>Dilewati — Kode Kunjungan Bentrok <span class="lencana l-merah">${r.bentrok}</span>
+            <span style="font-weight:normal;color:#64748b;font-size:11.5px;">
+            — dilayani lebih dari satu salesman dengan kode berbeda, sistem tidak menebak</span></h4>
+            ${tabelMini(['Kode Customer','Pilihan Kode Kunjungan'], h.bentrok, x=>`
+              <tr><td class="kode">${esc2(x.kode_customer)}</td>
+                  <td class="kode">${x.pilihan.map(p=>`<b>${esc2(p.kode_kunjungan||'(kosong)')}</b> oleh ${esc2(p.kode_salesman)}`).join(' &nbsp;vs&nbsp; ')}</td></tr>`)}
+          </div>`;
+        }
+        if (r.tanpa_kode > 0) {
+          isi += `<div class="blok-prev"><h4>Dilewati — Tanpa Kode Kunjungan <span class="lencana l-merah">${r.tanpa_kode}</span>
+            <span style="font-weight:normal;color:#64748b;font-size:11.5px;">
+            — kd_kunjungan di SQL Server masih kosong</span></h4>
+            ${tabelMini(['Kode Customer','kd_kunjungan','kd_kunjungan2','kd_kunjungan3','Salesman'], h.tanpa_kode, x=>`
+              <tr><td class="kode">${esc2(x.kode_customer)}</td>
+                  <td class="kode" style="color:#b91c1c;">${esc2(x.kode_kunjungan)}</td>
+                  <td class="kode">${esc2(x.k2||'-')}</td><td class="kode">${esc2(x.k3||'-')}</td>
+                  <td>${esc2(x.nama_salesman)}</td></tr>`)}
+          </div>`;
+        }
+        if (r.hanya_di_postgres > 0) {
+          isi += `<div class="blok-prev"><h4>Ada di Report, Tidak Ada di SQL Server <span class="lencana l-abu">${r.hanya_di_postgres}</span>
+            <span style="font-weight:normal;color:#64748b;font-size:11.5px;">— tidak dihapus apa pun</span></h4>
+            ${tabelMini(['Kode Customer','Kode Kunjungan','Nama Customer','Sumber'], h.hanya_di_postgres, x=>`
+              <tr><td class="kode">${esc2(x.kode_customer)}</td><td class="kode">${esc2(x.kode_kunjungan)}</td>
+                  <td>${esc2(x.nama_customer||'-')}</td><td>${esc2(x.sumber)}</td></tr>`)}
+          </div>`;
+        }
+
+        const area = document.getElementById('area-preview');
+        area.innerHTML = isi;
+        area.classList.remove('hidden');
+        document.getElementById('btn-trp').disabled = (r.baru + r.berubah + r.perlu_perbarui_keterangan) === 0;
+      } catch (err) {
+        console.error(err);
+        alert('❌ Tidak dapat terhubung ke server.');
+      } finally {
+        btn.disabled = false; spin(false);
+      }
+    }
+
+    async function kirimSync(tgl, pesanKonfirmasi) {
+      if (pesanKonfirmasi && !confirm(pesanKonfirmasi)) return;
+      document.getElementById('btn-trp').disabled = true;
+      document.getElementById('btn-skr').disabled = true;
+      spin(true, 'Menyimpan dan mengisi kode kunjungan...');
+      try {
+        const res = await fetch(`${API2}/api/sync-kunjungan-sqlserver`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tanggal_berlaku: tgl, isi_yang_kosong: true })
+        });
+        const h = await res.json();
+        alert((h.success ? '✅ ' : '❌ ') + h.message);
+        if (h.success) {
+          document.getElementById('area-preview').classList.add('hidden');
+          hasilBanding = null;
+          custSudahDimuat = true;
+          muatCustomer(1);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('❌ Tidak dapat terhubung ke server.');
+      } finally {
+        document.getElementById('btn-skr').disabled = false;
+        spin(false);
+      }
+    }
+
+    function terapkanSync() {
+      if (!hasilBanding) return;
+      const r = hasilBanding.ringkasan;
+      const tgl = document.getElementById('sync-tanggal').value || tglHariIni();
+      kirimSync(tgl,
+        `Terapkan perubahan berikut?\n\n` +
+        `  ${r.baru} customer baru\n` +
+        `  ${r.berubah} kode kunjungan diganti (berlaku mulai ${tgl})\n` +
+        `  ${r.perlu_perbarui_keterangan} keterangan diperbarui\n\n` +
+        `Dilewati: ${r.bentrok} bentrok, ${r.tanpa_kode} tanpa kode.\n` +
+        `Tidak ada data yang dihapus. Kode kunjungan yang kosong di data omset sekalian diisi.`);
+    }
+
+    function syncSekarang() {
+      const tgl = document.getElementById('sync-tanggal').value || tglHariIni();
+      kirimSync(tgl,
+        `Jalankan sinkronisasi sekarang tanpa melihat perbandingan dulu?\n\n` +
+        `Customer baru ditambahkan, kode yang berubah diganti (berlaku mulai ${tgl}),\n` +
+        `lalu kode_kunjungan yang kosong di data omset ikut diisi.\n\n` +
+        `Tidak ada data yang dihapus, dan riwayat bulan lalu tidak berubah.`);
+    }
+
+    async function lihatLog() {
+      const area = document.getElementById('area-log');
+      area.classList.remove('hidden');
+      area.innerHTML = '<div style="color:#64748b;font-size:12px;padding:8px 0;">Memuat riwayat...</div>';
+      try {
+        const res = await fetch(`${API2}/api/log-sync-kunjungan`);
+        const j = await res.json();
+        if (!j.success || j.data.length === 0) {
+          area.innerHTML = '<div style="color:#94a3b8;font-size:12px;padding:8px 0;">Belum ada riwayat sinkronisasi.</div>';
+          return;
+        }
+        area.innerHTML = `<div class="blok-prev"><h4>🕑 Riwayat Sinkronisasi <span class="lencana l-abu">${j.data.length} terakhir</span></h4>
+          ${tabelMini(['Waktu','Jenis','Hasil','Baru','Diganti','Terisi (master/history)','Dilewati'], j.data, x=>`
+            <tr><td>${new Date(x.waktu).toLocaleString('id-ID')}</td>
+                <td>${x.otomatis ? '<span class="lencana l-abu">otomatis</span>' : '<span class="lencana l-hijau">manual</span>'}</td>
+                <td>${x.berhasil ? '✅ berhasil' : '<span style="color:#b91c1c;">❌ gagal</span>'}</td>
+                <td>${x.ditambah}</td><td>${x.diganti}</td>
+                <td>${x.terisi_master} / ${x.terisi_history}</td>
+                <td>${x.dilewati_bentrok + x.dilewati_tanpa_kode}</td></tr>`)}
+        </div>`;
+      } catch (err) {
+        area.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:8px 0;">Gagal memuat riwayat.</div>';
+      }
+    }
+
+    // ---------- Periksa & perbaiki selisih data omset ----------
+    let hasilSelisih = null;
+
+    function selParam() {
+      const dari = document.getElementById('sel-dari').value;
+      const sampai = document.getElementById('sel-sampai').value;
+      return (dari && sampai) ? { dari, sampai } : {};
+    }
+
+    function selTglRingkas(v) {
+      if (!v) return '-';
+      const s = String(v).slice(0, 10);
+      const b = s.split('-');
+      return b.length === 3 ? `${b[2]}/${b[1]}/${b[0]}` : s;
+    }
+
+    async function cekSelisih() {
+      const btn = document.getElementById('btn-sel');
+      const p = selParam();
+      btn.disabled = true;
+      document.getElementById('btn-fix').disabled = true;
+      spin(true, 'Membandingkan data omset dengan master customer...');
+      try {
+        const q = new URLSearchParams(p).toString();
+        const res = await fetch(`${API2}/api/cek-selisih-customer${q ? '?' + q : ''}`);
+        const h = await res.json();
+        if (!h.success) { alert('❌ ' + h.message); return; }
+        hasilSelisih = h;
+
+        const hs = 'data_history_sales', ms = 'data_master_sales';
+        let isi = `<div class="kartu-baris">
+          ${kartu('k-ubah', h.total_nama,      'Baris Nama Beda')}
+          ${kartu('k-ubah', h.total_kunjungan, 'Baris Kode Kunjungan Beda')}
+          ${kartu('k-sama', h.nama[hs].baris + ' / ' + h.kunjungan[hs].baris, 'History (nama / kunjungan)')}
+          ${kartu('k-sama', h.nama[ms].baris + ' / ' + h.kunjungan[ms].baris, 'Master (nama / kunjungan)')}
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:10px;">Periode diperiksa: <b>${esc2(h.periode)}</b></div>`;
+
+        isi += `<div class="blok-prev"><h4>Nama Customer Berbeda <span class="lencana l-kuning">${h.total_nama}</span>
+          <span style="font-weight:normal;color:#64748b;font-size:11.5px;">
+          &mdash; nama di data omset akan disamakan dengan master</span></h4>
+          ${tabelMini(['Tabel','Kode Customer','Nama di Data Omset','Nama di Master','Baris'], h.contoh_nama, x=>`
+            <tr><td>${esc2(x.tabel === hs ? 'history' : 'master')}</td>
+                <td class="kode">${esc2(x.kode_customer)}</td>
+                <td style="color:#b91c1c;">${esc2(x.nama_sekarang || '(kosong)')}</td>
+                <td><b>${esc2(x.nama_seharusnya)}</b></td>
+                <td style="text-align:right;">${x.baris}</td></tr>`)}
+        </div>`;
+
+        isi += `<div class="blok-prev"><h4>Kode Kunjungan Berbeda <span class="lencana l-kuning">${h.total_kunjungan}</span>
+          <span style="font-weight:normal;color:#64748b;font-size:11.5px;">
+          &mdash; kode pembanding diambil dari periode master yang mencakup tanggal transaksinya</span></h4>
+          ${tabelMini(['Tabel','Kode Customer','Perubahan','Tanggal Transaksi','Baris'], h.contoh_kunjungan, x=>`
+            <tr><td>${esc2(x.tabel === hs ? 'history' : 'master')}</td>
+                <td class="kode">${esc2(x.kode_customer)}</td>
+                <td class="kode">${esc2(x.kunjungan_sekarang || '(kosong)')}
+                    <b style="color:#b45309;">&rarr;</b> <b>${esc2(x.kunjungan_seharusnya)}</b></td>
+                <td>${selTglRingkas(x.dari)} s/d ${selTglRingkas(x.sampai)}</td>
+                <td style="text-align:right;">${x.baris}</td></tr>`)}
+        </div>`;
+
+        if (h.total_nama === 0 && h.total_kunjungan === 0) {
+          isi += `<div class="blok-prev"><div style="padding:10px;background:#dcfce7;color:#15803d;
+            border-radius:5px;font-size:12.5px;"><b>✅ Tidak ada selisih.</b>
+            Nama customer dan kode kunjungan di data omset sudah sesuai master.</div></div>`;
+        }
+
+        const area = document.getElementById('area-selisih');
+        area.innerHTML = isi;
+        area.classList.remove('hidden');
+        document.getElementById('btn-fix').disabled = (h.total_nama + h.total_kunjungan) === 0;
+      } catch (err) {
+        console.error(err);
+        alert('❌ Tidak dapat terhubung ke server.');
+      } finally {
+        btn.disabled = false; spin(false);
+      }
+    }
+
+    async function perbaikiSelisih() {
+      if (!hasilSelisih) return;
+      const pakaiNama = document.getElementById('sel-chk-nama').checked;
+      const pakaiKunj = document.getElementById('sel-chk-kunj').checked;
+      if (!pakaiNama && !pakaiKunj) {
+        alert('Pilih minimal satu: Nama Customer atau Kode Kunjungan.');
+        return;
+      }
+      const h = hasilSelisih;
+      const pesan = `Perbaiki data omset sekarang?\n\n` +
+        (pakaiNama ? `  Nama customer: ${h.total_nama} baris\n` : `  Nama customer: dilewati\n`) +
+        (pakaiKunj ? `  Kode kunjungan: ${h.total_kunjungan} baris\n` : `  Kode kunjungan: dilewati\n`) +
+        `\nPeriode: ${h.periode}\n` +
+        `Kode kunjungan disesuaikan dengan periode tanggal transaksinya,\n` +
+        `jadi laporan bulan lalu tidak berubah. Tidak ada baris yang dihapus.`;
+      if (!confirm(pesan)) return;
+
+      const btn = document.getElementById('btn-fix');
+      btn.disabled = true;
+      document.getElementById('btn-sel').disabled = true;
+      spin(true, 'Memperbaiki data omset...');
+      try {
+        const res = await fetch(`${API2}/api/perbaiki-selisih-customer`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama: pakaiNama, kunjungan: pakaiKunj, ...selParam() })
+        });
+        const j = await res.json();
+        alert((j.success ? '✅ ' : '❌ ') + j.message);
+        if (j.success) {
+          hasilSelisih = null;
+          document.getElementById('area-selisih').classList.add('hidden');
+          await cekSelisih();
+        }
+      } catch (err) {
+        console.error(err);
+        alert('❌ Tidak dapat terhubung ke server.');
+      } finally {
+        document.getElementById('btn-sel').disabled = false;
+        spin(false);
+      }
+    }
+
+    window.onload = function () {
+      document.getElementById('sync-tanggal').value = tglHariIni();
+      loadSalesRoute();
+      muatDaftarArea();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Target Divisi AGPC - Anugerah Graha Plasindo</title>
+
+  <link rel="icon" type="image/png" href="LOGO-AGP-big.png">
+  
+  <!-- CSS GLOBAL -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- LIBRARY LOKAL -->
+  <script src="js/html2canvas.min.js"></script>
+  <script src="js/xlsx.full.min.js"></script>
+  <script src="js/html2pdf.bundle.min.js"></script>
+  <script src="js/jszip.min.js"></script>
+  <script src="js/FileSaver.min.js"></script>
+</head>
+<body>
+
+  <!-- FLOATING BUTTON BULAT UNTUK TOGGLE SIDEBAR -->
+  <button class="floating-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+    <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='AGP';">
+  </button>
+
+  <!-- SIDEBAR MENU NAVIGATION -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display='none'; this.nextElementSibling.style.fontSize='18px';">
+      <h2>REPORT SYSTEM</h2>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+          <span>Target Divisi Tahunan</span>
+          <span class="arrow-icon" id="arrow-target">▶</span>
+        </a>
+        <ul class="submenu open" id="submenu-target">
+          <li><a href="target-agpc.html" class="active">AGPC</a></li>
+          <li><a href="target-agps.html">AGPS</a></li>
+          <li><a href="target-agpn.html">AGP N</a></li>
+        </ul>
+      </li>
+      <li><a href="history-transaksi.html">History Transaksi</a></li>
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+          <span>Laporan Harian Sales</span>
+          <span class="arrow-icon" id="arrow-sales">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-sales">
+          <li><a href="list-sales-route.html">List Sales Route</a></li>
+          <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+          <li><a href="faktur-batal.html">Faktur Batal</a></li>
+          <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+        </ul>
+      </li>
+      <li><a href="target-product.html">Target Product AGPS & AGPC</a></li>
+      <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+      <li><a href="history-customer.html">History Customer</a></li>
+      <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+      <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+      <li><a href="#" onclick="handleLogout()" style="color: #ff9999; margin-top: 20px; border-top: 1px solid #990000;">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div class="main-content">
+
+    <div class="top-bar">
+      <div class="page-title" id="page-header-title">TARGET DIVISI AGPC 2026</div>
+    </div>
+
+    <!-- CARD FORM INPUT -->
+    <div class="card">
+      <div class="form-group">
+        <label id="label-target">TARGET 2026 :</label>
+        <input type="number" id="input-target-nominal" placeholder="Masukkan Target Nominal (Contoh: 156000000000)">
+      </div>
+
+      <div class="section-header-title" style="border:none; margin-bottom:0;">
+        <h4>Persentase Target Bulanan (%)</h4>
+        <span class="pct-preview-badge" id="preview-month-pct">Total: 0%</span>
+      </div>
+      <div class="grid-12" id="monthly-inputs"></div>
+
+      <div class="grid-2" style="margin-top: 15px;">
+        <div>
+          <label>Persen BJB (%):</label>
+          <input type="number" id="persen-bjb" placeholder="Contoh: 61">
+        </div>
+        <div>
+          <label>Persen JJB (%):</label>
+          <input type="number" id="persen-jjb" placeholder="Contoh: 39">
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 20px;">
+        <div>
+          <div class="section-header-title">
+            <h3 id="title-team-bjb">Team AGPC BJB</h3>
+            <span class="pct-preview-badge" id="preview-bjb-area-pct">Total: 0%</span>
+          </div>
+          <div id="inputs-team-bjb"></div>
+        </div>
+        <div>
+          <div class="section-header-title">
+            <h3 id="title-team-jjb">Team AGPC JJB</h3>
+            <span class="pct-preview-badge" id="preview-jjb-area-pct">Total: 0%</span>
+          </div>
+          <div id="inputs-team-jjb"></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 20px;">
+        <div>
+          <div class="section-header-title">
+            <h3 id="title-sales-bjb">Target Team Sales AGPC BJB 2026</h3>
+            <span class="pct-preview-badge" id="preview-sales-bjb-pct">Total: 0%</span>
+          </div>
+          <div id="inputs-sales-bjb"></div>
+        </div>
+        <div>
+          <div class="section-header-title">
+            <h3 id="title-sales-jjb">Target Team Sales AGPC JJB 2026</h3>
+            <span class="pct-preview-badge" id="preview-sales-jjb-pct">Total: 0%</span>
+          </div>
+          <div id="inputs-sales-jjb"></div>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="btn-proses" onclick="if(typeof prosesKalkulasi === 'function') prosesKalkulasi();">Proses Kalkulasi</button>
+        <button class="btn-simpan" onclick="if(typeof simpanKeDatabase === 'function') simpanKeDatabase();">Simpan ke Database</button>
+        <button class="btn-history" onclick="if(typeof bukaModalHistory === 'function') bukaModalHistory();">📜 History Report</button>
+        <button class="btn-log" onclick="if(typeof bukaModalLog === 'function') bukaModalLog();">📋 Log Update</button>
+      </div>
+    </div>
+
+    <!-- BAR BUTTON EXPORT -->
+    <div id="export-buttons-bar" style="display:none; margin-bottom: 15px;" class="button-group">
+      <button class="btn-export-excel" onclick="if(typeof exportToExcel === 'function') exportToExcel();">📊 Export ke Excel</button>
+      <button class="btn-export-pdf" onclick="if(typeof exportToPDF === 'function') exportToPDF();">📄 Export ke PDF</button>
+      <button class="btn-export-img" onclick="if(typeof exportToImages === 'function') exportToImages();">🖼️ Export 3 Gambar (Gambar 1, 2, 3)</button>
+    </div>
+
+    <!-- CONTAINER OUTPUT TABEL -->
+    <div id="output-tables"></div>
+
+  </div>
+
+  <!-- MODAL HISTORY REPORT -->
+  <div id="modal-history" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+    <div style="background:white; padding:25px; border-radius:8px; width:450px; max-width:90%;">
+      <h3>📜 History Report Target Divisi</h3>
+      <p style="font-size:13px; color:#64748b; margin-bottom:15px;">Pilih tahun report yang pernah disimpan sebelumnya:</p>
+      <div class="form-group">
+        <label>Pilih Tahun Target:</label>
+        <select id="select-history-year"><option value="">-- Memuat Tahun --</option></select>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+        <button style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;" onclick="if(typeof tutupModalHistory === 'function') tutupModalHistory();">Batal</button>
+        <button class="btn-history" onclick="if(typeof loadHistoryData === 'function') loadHistoryData();">Tampilkan Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LOG UPDATE -->
+  <div id="modal-log" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+    <div style="background:white; padding:25px; border-radius:8px; width:650px; max-width:90%; max-height:80vh; overflow-y:auto;">
+      <h3>📋 Log Update Perubahan Nama Area</h3>
+      <p style="font-size:13px; color:#64748b; margin-bottom:15px;">Riwayat perubahan Nama Area yang telah tercatat:</p>
+      <div id="log-content-container">Memuat data log...</div>
+      <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+        <button style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;" onclick="if(typeof tutupModalLog === 'function') tutupModalLog();">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT JS -->
+  <script src="js/sidebar.js"></script>
+  <script>
+    if (!localStorage.getItem('agp_user_logged')) {
+      window.location.href = 'index.html';
+    }
+    
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('agp_user_logged');
+        window.location.href = 'index.html';
+      }
+    }
+
+    window.PAGE_DIVISI = 'AGPC';
+  </script>
+  <script src="js/target-divisi.js"></script>
+</body>
+</html>

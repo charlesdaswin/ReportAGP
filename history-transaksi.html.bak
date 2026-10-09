@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History Transaksi - Anugerah Graha Plasindo</title>
+  <link rel="icon" type="image/png" href="LOGO-AGP-big.png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; }
+    .table-history { width: 100%; border-collapse: collapse; background: #fff; font-size: 11px; white-space: nowrap; }
+    .table-history th, .table-history td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+    .table-history th { background: #800000; color: #fff; text-align: center; font-weight: bold; }
+    .table-history tr:nth-child(even) { background: #f8fafc; }
+
+    .filter-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .search-input { padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; width: 280px; }
+    .filter-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; background: #f8fafc;
+                  border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; }
+    .fl { display: flex; flex-direction: column; gap: 3px; }
+    .fl label { font-size: 10.5px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: .3px; }
+    .fl select, .fl input { padding: 6px 9px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; background: #fff; }
+    .btn-cari { background: #800000; color: #fff; border: none; padding: 7px 16px; border-radius: 4px;
+                font-size: 12px; font-weight: bold; cursor: pointer; }
+    .btn-cari:hover { background: #660000; }
+    .btn-bersih { background: #64748b; color: #fff; border: none; padding: 7px 14px; border-radius: 4px;
+                  font-size: 12px; cursor: pointer; }
+    .hint { font-size: 11.5px; color: #64748b; margin-top: 6px; line-height: 1.5; }
+    mark { background: #fde68a; padding: 0 1px; border-radius: 2px; }
+    .loading-row td { text-align: center; color: #0284c7; font-weight: bold; padding: 18px; }
+
+    .pagination-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 12px; color: #475569; flex-wrap: wrap; gap: 10px; }
+    .pagination-buttons { display: flex; gap: 5px; align-items: center; }
+    .btn-page { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .btn-page:hover:not(:disabled) { background: #e2e8f0; }
+    .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <button class="floating-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+    <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='AGP';">
+  </button>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display='none';">
+      <h2>REPORT SYSTEM</h2>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+          <span>Target Divisi Tahunan</span>
+          <span class="arrow-icon" id="arrow-target">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-target">
+          <li><a href="target-agpc.html">AGPC</a></li>
+          <li><a href="target-agps.html">AGPS</a></li>
+          <li><a href="target-agpn.html">AGP N</a></li>
+        </ul>
+      </li>
+      <li><a href="history-transaksi.html" class="active">History Transaksi</a></li>
+<li>
+    <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+      <span>Laporan Harian Sales</span>
+      <span class="arrow-icon" id="arrow-sales">▶</span>
+    </a>
+    <ul class="submenu" id="submenu-sales">
+      <li><a href="list-sales-route.html">List Sales Route</a></li>
+      <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+      <li><a href="faktur-batal.html">Faktur Batal</a></li>
+      <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+    </ul>
+  </li>
+      <li><a href="target-product.html">Target Product AGPS & AGPC</a></li>
+      <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+      <li><a href="history-customer.html">History Customer</a></li>
+      <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+      <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+      <li><a href="#" onclick="handleLogout()" style="color: #ff9999; margin-top: 20px; border-top: 1px solid #990000;">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div class="page-title">HISTORY TRANSAKSI</div>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar">
+        <h3>📜 History Seluruh Transaksi Sales</h3>
+      </div>
+
+      <div class="filter-row">
+        <div class="fl" style="flex:1; min-width:260px;">
+          <label>Kata Kunci</label>
+          <input type="text" id="input-search" class="search-input" style="width:100%"
+                 placeholder="Kode/Nama Salesman, Kode Customer, Kode Barang, No Transaksi..."
+                 onkeyup="handleSearch(event)">
+        </div>
+        <div class="fl">
+          <label>Cari di Kolom</label>
+          <select id="select-field" onchange="applyFilter()">
+            <option value="all" selected>Semua Kolom</option>
+            <option value="kode_salesman">Kode Salesman</option>
+            <option value="nama_salesman">Nama Salesman</option>
+            <option value="kode_customer">Kode Customer</option>
+            <option value="nama_customer">Nama Customer</option>
+            <option value="kode_barang">Kode Barang</option>
+            <option value="nama_barang">Nama Barang</option>
+            <option value="no_transaksi">No Transaksi</option>
+            <option value="kode_area">Kode Area</option>
+            <option value="area">Area</option>
+            <option value="nama_pasar">Nama Pasar</option>
+            <option value="nama_divisi">Nama Divisi</option>
+            <option value="kode_kunjungan">Kode Kunjungan</option>
+          </select>
+        </div>
+        <div class="fl">
+          <label>Tanggal Dari</label>
+          <input type="date" id="f-dari" onchange="applyFilter()">
+        </div>
+        <div class="fl">
+          <label>Sampai</label>
+          <input type="date" id="f-sampai" onchange="applyFilter()">
+        </div>
+        <div class="fl">
+          <label>Tampilkan</label>
+          <select id="select-limit" onchange="changeLimit()">
+            <option value="10" selected>10/hal</option>
+            <option value="25">25/hal</option>
+            <option value="50">50/hal</option>
+            <option value="100">100/hal</option>
+            <option value="250">250/hal</option>
+          </select>
+        </div>
+        <button class="btn-cari" onclick="applyFilter()">🔍 Cari</button>
+        <button class="btn-bersih" onclick="bersihkanFilter()">↺ Bersihkan</button>
+      </div>
+
+      <div class="hint">
+        Beberapa kata dipisah spasi akan dicari bersamaan. Contoh <b>bobby bogor</b> menampilkan baris yang
+        mengandung kedua kata itu. Pilih kolom tertentu kalau ingin pencarian lebih tepat dan lebih cepat.
+      </div>
+
+      <div class="table-responsive">
+        <table class="table-history">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Nama Divisi</th>
+              <th>Kode Area</th>
+              <th>Area</th>
+              <th>Kode Salesman</th>
+              <th>Nama Salesman</th>
+              <th>Nama Pasar</th>
+              <th>Kode Customer</th>
+              <th>Nama Customer</th>
+              <th>Kode Barang</th>
+              <th>Nama Barang</th>
+              <th>No Transaksi</th>
+              <th>Tanggal</th>
+              <th>Kode Kunjungan</th>
+              <th>Qty (Crt)</th>
+              <th>DPP (Rp)</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-history">
+            <tr><td colspan="16" style="text-align: center; color: #64748b;">Memuat data history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination-bar">
+        <div id="page-count-info">Menampilkan 0 data</div>
+        <div class="pagination-buttons">
+          <button class="btn-page" id="btn-prev" onclick="prevPage()">◀ Sebelumnya</button>
+          <span id="text-page-info" style="font-weight: bold;">Halaman 1 / 1</span>
+          <button class="btn-page" id="btn-next" onclick="nextPage()">Selanjutnya ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/sidebar.js"></script>
+  <script>
+    if (!localStorage.getItem('agp_user_logged')) window.location.href = 'index.html';
+
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('agp_user_logged');
+        window.location.href = 'index.html';
+      }
+    }
+
+    let currentPage = 1;
+    let currentLimit = 10;
+    let totalPages = 1;
+    let searchQuery = '';
+    let timerCari = null;
+    let permintaanKe = 0;
+
+    const esc = (s) => String(s == null ? '' : s)
+      .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    // Tandai bagian teks yang cocok dengan kata kunci
+    function tandai(teks) {
+      const isi = esc(teks == null || teks === '' ? '-' : teks);
+      if (!searchQuery) return isi;
+      let hasil = isi;
+      searchQuery.split(/\s+/).filter(Boolean).forEach(kata => {
+        const aman = kata.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        hasil = hasil.replace(new RegExp(`(${aman})`, 'gi'), '<mark>$1</mark>');
+      });
+      return hasil;
+    }
+
+    function paramFilter() {
+      const p = new URLSearchParams();
+      p.set('page', currentPage);
+      p.set('limit', currentLimit);
+      if (searchQuery) p.set('search', searchQuery);
+      const field = document.getElementById('select-field').value;
+      if (field && field !== 'all') p.set('field', field);
+      const dari = document.getElementById('f-dari').value;
+      const sampai = document.getElementById('f-sampai').value;
+      if (dari) p.set('dari', dari);
+      if (sampai) p.set('sampai', sampai);
+      return p.toString();
+    }
+
+    async function loadHistoryData() {
+      const tbody = document.getElementById('tbody-history');
+      const nomorPermintaan = ++permintaanKe;
+      tbody.innerHTML = `<tr class="loading-row"><td colspan="16">⏳ Memuat data...</td></tr>`;
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/history-transaksi?${paramFilter()}`);
+        const result = await response.json();
+
+        // Abaikan jawaban yang sudah kedaluwarsa (user mengetik cepat)
+        if (nomorPermintaan !== permintaanKe) return;
+
+        if (!result.success) {
+          tbody.innerHTML = `<tr><td colspan="16" style="text-align:center; color:#ef4444;">${esc(result.message || 'Gagal memuat data.')}</td></tr>`;
+          return;
+        }
+
+        if (result.data.length > 0) {
+          tbody.innerHTML = result.data.map(item => `
+            <tr>
+              <td>${esc(item.month || '-')}</td>
+              <td><b>${tandai(item.nama_divisi)}</b></td>
+              <td style="text-align: center;"><span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:bold;">${tandai(item.kode_area)}</span></td>
+              <td>${tandai(item.area)}</td>
+              <td>${tandai(item.kode_salesman)}</td>
+              <td><b>${tandai(item.nama_salesman)}</b></td>
+              <td>${tandai(item.nama_pasar)}</td>
+              <td>${tandai(item.kode_customer)}</td>
+              <td>${tandai(item.nama_customer)}</td>
+              <td>${tandai(item.kode_barang)}</td>
+              <td>${tandai(item.nama_barang)}</td>
+              <td>${tandai(item.no_transaksi)}</td>
+              <td style="text-align: center;">${esc(item.tanggal || '-')}</td>
+              <td style="text-align: center;">${tandai(item.kode_kunjungan)}</td>
+              <td style="text-align: right;">${item.qty_crt}</td>
+              <td style="text-align: right; font-weight: bold;${parseFloat(item.dpp_rp) < 0 ? ' color:#dc2626;' : ''}">${parseFloat(item.dpp_rp).toLocaleString('id-ID')}</td>
+            </tr>
+          `).join('');
+
+          totalPages = result.pagination.totalPages;
+          const startNo = (currentPage - 1) * currentLimit + 1;
+          const endNo = Math.min(currentPage * currentLimit, result.pagination.totalRows);
+          const totalDpp = Math.round(result.totalDpp || 0).toLocaleString('id-ID');
+
+          document.getElementById('page-count-info').innerHTML =
+            `Menampilkan ${startNo} - ${endNo} dari total <b>${result.pagination.totalRows.toLocaleString('id-ID')}</b> data` +
+            ` &nbsp;|&nbsp; Total DPP: <b>Rp ${totalDpp}</b>`;
+          document.getElementById('text-page-info').innerText = `Halaman ${currentPage} / ${totalPages}`;
+          document.getElementById('btn-prev').disabled = (currentPage === 1);
+          document.getElementById('btn-next').disabled = (currentPage === totalPages);
+        } else {
+          tbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color: #94a3b8; padding:24px;">
+            Tidak ada data yang cocok dengan pencarian.</td></tr>`;
+          document.getElementById('page-count-info').innerText = 'Menampilkan 0 data';
+          document.getElementById('text-page-info').innerText = 'Halaman 1 / 1';
+          document.getElementById('btn-prev').disabled = true;
+          document.getElementById('btn-next').disabled = true;
+        }
+      } catch (err) {
+        if (nomorPermintaan !== permintaanKe) return;
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color: #ef4444;">Gagal memuat data history. Pastikan server.js berjalan.</td></tr>`;
+      }
+    }
+
+    function prevPage() { if (currentPage > 1) { currentPage--; loadHistoryData(); } }
+    function nextPage() { if (currentPage < totalPages) { currentPage++; loadHistoryData(); } }
+    function changeLimit() { currentLimit = parseInt(document.getElementById('select-limit').value); currentPage = 1; loadHistoryData(); }
+
+    function applyFilter() {
+      searchQuery = document.getElementById('input-search').value.trim();
+      currentPage = 1;
+      loadHistoryData();
+    }
+
+    // Tunggu user berhenti mengetik 400ms supaya tidak membanjiri server (data ratusan ribu baris)
+    function handleSearch(e) {
+      if (e.key === 'Enter') { clearTimeout(timerCari); applyFilter(); return; }
+      clearTimeout(timerCari);
+      timerCari = setTimeout(applyFilter, 400);
+    }
+
+    function bersihkanFilter() {
+      document.getElementById('input-search').value = '';
+      document.getElementById('select-field').value = 'all';
+      document.getElementById('f-dari').value = '';
+      document.getElementById('f-sampai').value = '';
+      searchQuery = '';
+      currentPage = 1;
+      loadHistoryData();
+    }
+
+    window.onload = loadHistoryData;
+  </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="js/api-base.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login System - Anugerah Graha Plasindo</title>
+
+  <link rel="icon" type="image/png" href="LOGO-AGP-big.png">
+  
+  <!-- CSS GLOBAL -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* STYLING KHUSUS TAMPILAN LOGIN & DASHBOARD WELCOME */
+    .login-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, #800000 0%, #4a0000 100%);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10000; transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    .login-overlay.hidden {
+      opacity: 0; visibility: hidden; pointer-events: none;
+    }
+    .login-card {
+      background: #ffffff; padding: 35px 30px; border-radius: 12px;
+      width: 380px; max-width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      text-align: center; border-top: 5px solid #d00000;
+    }
+    .login-card img { max-width: 150px; height: auto; margin-bottom: 15px; }
+    .login-card h3 { color: #800000; font-size: 18px; margin-bottom: 5px; border: none; }
+    .login-card p { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+    .login-card .form-group { text-align: left; }
+    .btn-login {
+      width: 100%; padding: 12px; background: #d00000; color: white;
+      font-size: 14px; font-weight: bold; border: none; border-radius: 6px;
+      cursor: pointer; margin-top: 10px; transition: background 0.2s;
+    }
+    .btn-login:hover { background: #a00000; }
+
+    /* ANIMASI SLIDE SIDEBAR */
+    .sidebar.login-hidden {
+      margin-left: -270px;
+    }
+    .welcome-banner {
+      background: linear-gradient(90deg, #800000, #b30000); color: white;
+      padding: 25px; border-radius: 8px; margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .welcome-banner h2 { font-size: 24px; margin-bottom: 8px; }
+    .welcome-banner p { font-size: 14px; color: #fecdd3; }
+  </style>
+</head>
+<body>
+
+  <!-- MODAL FORM LOGIN -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='<h2 style=\'color:#d00000;margin-bottom:15px;\'>AGP</h2>';">
+      <h3>REPORT SYSTEM</h3>
+      <p>Silakan login untuk mengakses menu report</p>
+      
+      <form id="form-login" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Nama / Username :</label>
+          <input type="text" id="login-username" placeholder="Masukkan Nama Anda" required>
+        </div>
+        <div class="form-group">
+          <label>Password :</label>
+          <input type="password" id="login-password" placeholder="Masukkan Password" required>
+        </div>
+        <button type="submit" class="btn-login">LOGIN SEKARANG</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FLOATING BUTTON BULAT UNTUK TOGGLE SIDEBAR -->
+  <button class="floating-toggle-btn" id="floating-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi" style="display: none;">
+    <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.outerHTML='AGP';">
+  </button>
+
+  <!-- SIDEBAR MENU NAVIGATION (AUTO HIDE SEBELUM LOGIN) -->
+  <div class="sidebar login-hidden" id="sidebar">
+    <div class="sidebar-header">
+      <img src="LOGO-AGP-big.png" alt="Logo AGP" onerror="this.style.display='none'; this.nextElementSibling.style.fontSize='18px';">
+      <h2>REPORT SYSTEM</h2>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" onclick="toggleSubmenu('submenu-target', this)">
+          <span>Target Divisi Tahunan</span>
+          <span class="arrow-icon" id="arrow-target">▶</span>
+        </a>
+        <ul class="submenu" id="submenu-target">
+          <li><a href="target-agpc.html">AGPC</a></li>
+          <li><a href="target-agps.html">AGPS</a></li>
+          <li><a href="target-agpn.html">AGP N</a></li>
+        </ul>
+      </li>
+      <li><a href="history-transaksi.html">History Transaksi</a></li>
+      <li>
+    <a href="#" onclick="toggleSubmenu('submenu-sales', this)">
+      <span>Laporan Harian Sales</span>
+      <span class="arrow-icon" id="arrow-sales">▶</span>
+    </a>
+    <ul class="submenu" id="submenu-sales">
+      <li><a href="list-sales-route.html">List Sales Route</a></li>
+      <li><a href="upload-master-sales.html">Upload Data Master</a></li>
+      <li><a href="faktur-batal.html">Faktur Batal</a></li>
+      <li><a href="faktur-tolakan.html">Faktur Tolakan</a></li>
+    </ul>
+  </li>
+      <li><a href="target-product.html">Target Product AGPS & AGPC</a></li>
+      <li><a href="laporan-promosi.html">Laporan Product Promosi</a></li>
+      <li><a href="history-customer.html">History Customer</a></li>
+      <li><a href="laporan-omset.html">Laporan Omset & Sisa Piutang</a></li>
+      <li><a href="perbandingan-omset.html">Perbandingan Data Omset</a></li>
+      <li><a href="#" onclick="handleLogout()" style="color: #ff9999; margin-top: 20px; border-top: 1px solid #990000;">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div class="main-content">
+
+    <div class="top-bar">
+      <div class="page-title" id="page-header-title">DASHBOARD UTAMA</div>
+    </div>
+
+    <!-- BANNER UCAPAN WELCOME KETIKA SUDAH LOGIN -->
+    <div class="welcome-banner" id="welcome-banner" style="display:none;">
+      <h2 id="welcome-user-text">Selamat Datang, User!</h2>
+      <p>Anda telah berhasil masuk ke sistem Report Anugerah Graha Plasindo. Silakan pilih menu pada sidebar sebelah kiri untuk melihat atau mengelola laporan target divisi.</p>
+    </div>
+
+    <div class="card" id="dashboard-info-card" style="display:none;">
+      <h3>📌 Petunjuk Navigasi</h3>
+      <p style="font-size: 13px; color: #475569; line-height: 1.6; margin-top: 10px;">
+        Gunakan menu di sebelah kiri untuk masuk ke halaman input dan laporan masing-masing divisi:
+      </p>
+      <ul style="margin-left: 20px; margin-top: 10px; font-size: 13px; color: #475569; line-height: 1.8;">
+        <li><b>Target Divisi Tahunan</b> &rarr; Pilih submenu (AGPC, AGPS, atau AGP N) untuk mengelola target nominal dan breakdown area.</li>
+        <li><b>Laporan Harian Sales</b> &rarr; Pilih submenu <b>Upload Data Master</b> untuk mengunggah file Excel omset/sales ke database.</li>
+        <li><b>History Transaksi & Laporan</b> &rarr; Mengakses riwayat data penjualan dan omset.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- SCRIPT JS -->
+  <script src="js/sidebar.js"></script>
+  <script>
+    window.onload = function() {
+      const savedUser = localStorage.getItem('agp_user_logged');
+      if (savedUser) {
+        showDashboardView(savedUser);
+      }
+    };
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const usernameInput = document.getElementById('login-username').value.trim();
+      const passwordInput = document.getElementById('login-password').value.trim();
+
+      if (!usernameInput || !passwordInput) {
+        alert('Username dan Password wajib diisi!');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: usernameInput,
+            password: passwordInput
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          localStorage.setItem('agp_user_logged', result.user.fullName);
+          document.getElementById('login-overlay').classList.add('hidden');
+          setTimeout(() => {
+            showDashboardView(result.user.fullName);
+          }, 300);
+        } else {
+          alert(result.message || 'Username atau Password salah!');
+        }
+      } catch (err) {
+        console.error('Login Error:', err);
+        alert('Gagal terhubung ke server backend! Pastikan server.js berjalan di port 3000.');
+      }
+    }
+
+    function showDashboardView(username) {
+      document.getElementById('login-overlay').classList.add('hidden');
+      document.getElementById('welcome-user-text').innerText = `Selamat Datang, ${username}!`;
+      document.getElementById('welcome-banner').style.display = 'block';
+      document.getElementById('dashboard-info-card').style.display = 'block';
+      document.getElementById('floating-btn').style.display = 'flex';
+
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.remove('login-hidden');
+    }
+
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('agp_user_logged');
+        window.location.reload();
+      }
+    }
+  </script>
+</body>
+</html>
