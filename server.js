@@ -2419,6 +2419,118 @@ async function siapkanTabelTargetProduct() {
   }
 }
 
+// =========================================================================
+// MASTER PRODUCT AGP (daftar produk dari file master_product_AGP.xlsx)
+// Saat tabel masih kosong, otomatis diisi dari data/master-product-seed.json
+// =========================================================================
+const KOLOM_MASTER_PRODUCT = [
+  'divisi', 'kode_barang', 'kode_1', 'kode_2', 'nama_agp', 'nama_master',
+  'kode', 'grup', 'jenis_barang', 'merk', 'kelompok', 'status'
+];
+
+function bersihkanMasterProduct(x) {
+  const r = {};
+  KOLOM_MASTER_PRODUCT.forEach(k => {
+    r[k] = (x && x[k] !== undefined && x[k] !== null) ? String(x[k]).trim() : '';
+  });
+  r.divisi = r.divisi.toUpperCase();
+  r.status = (r.status || 'ACTIVE').toUpperCase();
+  return r;
+}
+
+// Upsert per baris (kunci: divisi + kode_barang). Dipakai seed & import.
+async function simpanMasterProduct(client, items) {
+  let jumlah = 0;
+  for (const x of items) {
+    const r = bersihkanMasterProduct(x);
+    if (!r.kode_barang) continue;
+    await client.query(
+      `INSERT INTO master_product (${KOLOM_MASTER_PRODUCT.join(', ')}, updated_at)
+       VALUES (${KOLOM_MASTER_PRODUCT.map((_, i) => '$' + (i + 1)).join(', ')}, NOW())
+       ON CONFLICT (divisi, kode_barang) DO UPDATE SET
+         ${KOLOM_MASTER_PRODUCT.filter(k => k !== 'divisi' && k !== 'kode_barang').map(k => `${k} = EXCLUDED.${k}`).join(', ')},
+         updated_at = NOW()`,
+      KOLOM_MASTER_PRODUCT.map(k => r[k])
+    );
+    jumlah++;
+  }
+  return jumlah;
+}
+
+async function siapkanTabelMasterProduct() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS master_product (
+        id SERIAL PRIMARY KEY,
+        divisi VARCHAR(10) NOT NULL,
+        kode_barang VARCHAR(100) NOT NULL,
+        kode_1 VARCHAR(20), kode_2 VARCHAR(100),
+        nama_agp VARCHAR(255), nama_master VARCHAR(255),
+        kode VARCHAR(20), grup VARCHAR(255), jenis_barang VARCHAR(255),
+        merk VARCHAR(100), kelompok VARCHAR(100),
+        status VARCHAR(20) DEFAULT 'ACTIVE',
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE (divisi, kode_barang)
+      )
+    `);
+    const ada = await client.query('SELECT COUNT(*)::int AS n FROM master_product');
+    if (ada.rows[0].n === 0) {
+      try {
+        const seed = require(path.join(__dirname, 'data', 'master-product-seed.json'));
+        await client.query('BEGIN');
+        const n = await simpanMasterProduct(client, seed);
+        await client.query('COMMIT');
+        console.log(`✅ Tabel master_product diisi awal: ${n} produk.`);
+      } catch (e) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('⚠️  Gagal mengisi awal master_product:', e.message);
+      }
+    }
+    console.log('✅ Tabel master_product siap.');
+  } catch (err) {
+    console.error('⚠️  Gagal menyiapkan tabel master_product:', err.message);
+  } finally {
+    client.release();
+  }
+}
+
+app.get('/api/master-product', async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT id, ${KOLOM_MASTER_PRODUCT.join(', ')}, updated_at
+       FROM master_product
+       ORDER BY divisi ASC, nama_master ASC, kode_barang ASC`
+    );
+    res.json({ success: true, total: r.rows.length, items: r.rows });
+  } catch (err) {
+    console.error('Error Get Master Product:', err);
+    res.status(500).json({ success: false, message: 'Gagal mengambil master product: ' + err.message });
+  }
+});
+
+// Import dari Excel. mode 'replace' = hapus semua lalu isi ulang, 'upsert' = tambah/perbarui.
+app.post('/api/master-product/import', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { mode, items } = req.body || {};
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'Tidak ada baris produk yang dikirim.' });
+    }
+    await client.query('BEGIN');
+    if (mode === 'replace') await client.query('DELETE FROM master_product');
+    const n = await simpanMasterProduct(client, items);
+    await client.query('COMMIT');
+    res.json({ success: true, message: `${n} produk berhasil disimpan (${mode === 'replace' ? 'ganti semua' : 'tambah/perbarui'}).` });
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Error Import Master Product:', err);
+    res.status(500).json({ success: false, message: 'Gagal menyimpan master product: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Ambil data satu konteks (divisi + team + periode)
 app.get('/api/target-product', async (req, res) => {
   try {
@@ -5259,6 +5371,7 @@ app.listen(PORT, '0.0.0.0', async () => {
     await initDatabase();
     await siapkanStrukturRouteDanKunjungan();
     await siapkanTabelTargetProduct();
+    await siapkanTabelMasterProduct();
     await siapkanKolomSyncKunjungan();
     await siapkanLogSyncKunjungan();
     await perbaikiSemuaSequence();
